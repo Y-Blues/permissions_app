@@ -1,21 +1,9 @@
-from ycappuccino.core.decorator_app import App
+import secrets
 
-from ycappuccino.api.decorators import Item, ItemReference, Empty, Property, Reference
+from ycappuccino.api.decorators import Item, Property
 from ycappuccino.api.models import Model
-import hashlib
-import os
-
-"""
-    model that decribe a login 
-"""
-
-
-@Empty()
-def empty():
-    _empty = Login()
-    _empty.id("client_pyscript_core")
-    _empty.password("client_pyscript_core")
-    return _empty
+from ycappuccino.core.decorator_app import App
+from ycappuccino.permissions import passwords
 
 
 @App(name="ycappuccino-permissions")
@@ -23,16 +11,16 @@ def empty():
     collection="logins",
     name="login",
     plural="logins",
-    secure_write=True,
     secure_read=True,
+    secure_write=True,
 )
 class Login(Model):
+
     def __init__(self, a_dict=None):
         super().__init__(a_dict)
-        self._password = None
-        self._salt = None
         self._login = None
-        self._account_ref = None
+        self._salt = None
+        self._password = None
 
     @Property(name="login")
     def login(self, a_value):
@@ -42,14 +30,11 @@ class Login(Model):
     def salt(self, a_value):
         self._salt = a_value
 
-    @Property(name="password")
-    def _private_password(self, a_value):
+    @Property(name="password", private=True)
+    def _stored_password(self, a_value):
         self._password = a_value
 
-    def password(self, a_value):
-        self.salt(os.urandom(32).hex())
-        w_concat = "{}{}".format(self._salt, a_value).encode("utf-8")
-        self._private_password(hashlib.md5(w_concat).hexdigest())
-
-
-empty()
+    def password(self, cleartext):
+        """sets a fresh salt and stores its scrypt hash - do not call _stored_password directly"""
+        self.salt(secrets.token_hex(32))
+        self._stored_password(passwords.hash_scrypt(cleartext, self._salt))

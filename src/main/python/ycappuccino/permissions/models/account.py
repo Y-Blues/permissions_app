@@ -1,23 +1,6 @@
-from ycappuccino.core.decorator_app import App
-
-from ycappuccino.api.decorators import Item, ItemReference, Empty, Property, Reference
+from ycappuccino.api.decorators import Item, ItemReference, Property, Reference
 from ycappuccino.api.models import Model
-
-
-"""
-    model that decribe a account 
-"""
-
-
-@Empty()
-def empty():
-    _empty = Account()
-    _empty.id("test")
-    _empty.login("client_pyscript_core")
-    _empty.name("client_pyscript_core")
-    _empty.role("client_pyscript_core")
-
-    return _empty
+from ycappuccino.core.decorator_app import App
 
 
 @App(name="ycappuccino-permissions")
@@ -25,18 +8,17 @@ def empty():
     collection="accounts",
     name="account",
     plural="accounts",
-    secure_write=True,
     secure_read=True,
+    secure_write=True,
 )
 @ItemReference(from_name="account", field="login", item="login")
 @ItemReference(from_name="account", field="role", item="role")
 class Account(Model):
-    """describe an account in the application"""
 
     def __init__(self, a_dict=None):
         super().__init__(a_dict)
-        self._login = None
         self._name = None
+        self._login = None
         self._role = None
 
     @Property(name="name")
@@ -50,6 +32,3 @@ class Account(Model):
     @Reference(name="role")
     def role(self, a_value):
         self._role = a_value
-
-
-empty()

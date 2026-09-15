@@ -1,21 +1,6 @@
-from ycappuccino.core.decorator_app import App
-
-from ycappuccino.api.decorators import Item, ItemReference, Empty, Property, Reference
+from ycappuccino.api.decorators import Item, Property
 from ycappuccino.api.models import Model
-
-"""
-    model that decribe a organisation
-"""
-
-
-@Empty()
-def empty():
-    _empty = Organization()
-    _empty.id("test")
-    _empty.name("test")
-    _empty.comment("txt")
-
-    return _empty
+from ycappuccino.core.decorator_app import App
 
 
 @App(name="ycappuccino-permissions")
@@ -23,14 +8,14 @@ def empty():
     collection="organizations",
     name="organization",
     plural="organizations",
-    secure_write=True,
     secure_read=True,
+    secure_write=True,
 )
 class Organization(Model):
+
     def __init__(self, a_dict=None):
         super().__init__(a_dict)
         self._name = None
-        self._comment = None
         self._father = None
 
     @Property(name="name")
@@ -40,10 +25,3 @@ class Organization(Model):
     @Property(name="father")
     def father(self, a_value):
         self._father = a_value
-
-    @Property(name="comment")
-    def comment(self, a_value):
-        self._comment = a_value
-
-
-empty()
