@@ -1,15 +1,20 @@
 ---
-models.app:
-  ycappuccino-permissions: true
-  ycappuccino-remote_storage: true
-
+name: permissions-demo
+bundle_prefix:
+  - ycappuccino.storage
+  - ycappuccino.endpoints_service
+  - ycappuccino.permissions
+  - library
 layers:
-  ycappuccino-permissions:
+  ycappuccino_storage_memory:
     active: true
-  ycappuccino-remote:
-    active: true
-    host: localhost
-    port: 0
-    scheme: http
-name: scheduler
-bundle_prefix: ycappuccino
+components:
+  JwtAuthentication:
+    key: demo-secret-key-not-for-production-use
+  LoginService:
+    key: demo-secret-key-not-for-production-use
+  LoginCookieService:
+    key: demo-secret-key-not-for-production-use
+config:
+  http_server:
+    active: false
