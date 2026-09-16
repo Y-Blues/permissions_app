@@ -1,0 +1,24 @@
+---
+name: permissions-console
+bundle_prefix:
+  - ycappuccino.storage
+  - ycappuccino.endpoints_storage
+  - ycappuccino.endpoints_service
+  - ycappuccino.permissions
+layers:
+  ycappuccino_storage_memory:
+    active: true
+components:
+  JwtAuthentication:
+    key: demo-secret-key-not-for-production-use
+  LoginService:
+    key: demo-secret-key-not-for-production-use
+  LoginCookieService:
+    key: demo-secret-key-not-for-production-use
+  FrontendShell:
+    key: demo-secret-key-not-for-production-use
+config:
+  http_server:
+    active: false
+  shell:
+    console: false

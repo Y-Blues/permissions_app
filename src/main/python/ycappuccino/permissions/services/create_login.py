@@ -1,12 +1,5 @@
-"""
-CreateLoginService: creates a new Login (login + password), correctly hashed.
-
-Not a generic CRUD create on item_id="login": Login.password(cleartext) is the only safe entry
-point that salts and scrypt-hashes a password (see models/login.py) -- a plain CRUD write would
-set the raw "password" field's storage value directly (private=True only hides it from reads, it
-does not stop a write), storing the cleartext. This service exists precisely so nothing else ever
-needs to do that.
-"""
+"""Creates a Login with a hashed password. Not a CRUD create: a raw write would store the
+password in cleartext (private=True only hides it from reads, not writes)."""
 
 from ycappuccino.api.endpoints_service import IExposedService, ServiceResult, ServiceRoute
 from ycappuccino.api.endpoints_storage import InvalidRequest, NotFound

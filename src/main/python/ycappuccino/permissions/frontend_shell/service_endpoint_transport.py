@@ -1,11 +1,4 @@
-"""
-ServiceEndpointTransport: a ycappuccino.ui.transport.Transport that calls a local IServiceEndpoint
-directly in Python -- no HTTP, no JSON, no network. Deliberately NOT
-ycappuccino.ui.http_transport.HttpTransport: communication between this frontend and
-permissions_app's own backend must be a Python service call, not an HTTP request -- calling a
-*remote* instance across a process/machine boundary is ycappuccino-remote's job, not this one, and
-not ready yet (see frontend_shell/main.py's docstring).
-"""
+"""Transport calling a local IServiceEndpoint directly (no HTTP) -- see main.py's docstring."""
 
 from typing import Any, Optional
 

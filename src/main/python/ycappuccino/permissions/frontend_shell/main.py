@@ -1,45 +1,14 @@
 """
-FrontendShell: a terminal admin console for permissions_app -- log in, change password, and
-manage organizations (tenancy), roles, permissions and users -- every screen loaded from a YAML
-template (screens/*.yml, never hand-built in Python), chained through the same decoded subject
-once logged in.
+FrontendShell: terminal admin console for permissions_app -- login, tenants, roles, permissions,
+users. Screens are YAML templates (screens/*.yml). Talks to its own backend via a Python service/
+CRUD call (never HTTP, see ServiceEndpointTransport/CrudTransport) -- same-process only, until
+ycappuccino-remote's peer dispatch design lands (remote/docs/superpowers/plans/2026-09-16-transparent-rpc.md).
 
-Talks to its own backend as a Python service call (ServiceEndpointTransport, a real
-IServiceEndpoint) or a Python CRUD call (CrudTransport, a real ICrud) -- never HTTP. This
-component therefore only runs installed in the SAME process/Framework as permissions_app's own
-backend. Calling a *remote* permissions_app instance (a separate process/machine) is not possible
-today and is NOT sketched as a real code path here: it is ycappuccino-remote's job, once its
-typed, peer-authenticated dispatch design lands
-(remote/docs/superpowers/specs/2026-09-16-transparent-rpc-design.md, plan written at
-remote/docs/superpowers/plans/2026-09-16-transparent-rpc.md, not yet implemented). Until then, this
-stays a single-process tool.
+create_user() chains 3 screens: create_login (hashed password), account (profile), role_account
+(tenant grant) -- same records AccountBootStrap creates by hand for the superadmin. A tenant-wide
+role/permission (e.g. admin) is granted at the root organization ("system"), not a special case.
 
-Creating a user is three chained screens, not one: create_login.yml (a Python service call to
-CreateLoginService -- the only safe way to set a hashed password, see that service's docstring),
-account.yml (a CRUD create of the profile that references it), then role_account.yml (grants that
-account a role *within a tenant* -- see below). Same recipe AccountBootStrap follows in code for
-the superadmin, just run interactively, one screen at a time; each step only continues if the
-previous one actually created something. Neither of ui_shell's screens has any notion of the
-others; this module is exactly the "generic loading + generic event wiring" ycappuccino-ui is
-meant to be, plus the one bit of real chaining logic (decode the token, carry the subject) that
-could not itself be expressed in a template.
-
-Tenancy model (see permissions_app's own README, "Multi-tenant"): a Role/RolePermission is *not*
-itself tied to one tenant -- "editor" or its rights are the same definition everywhere. A
-RoleAccount is what actually scopes a grant to one organization (tenant); role_account.yml is that
-screen. A role-independent-of-tenant grant (e.g. a global "admin") is not a special case in the
-data model: pick the root organization ("system") when granting it -- OrganizationTree's own
-descendant-inclusion filter (see README) already makes a subject scoped to the root see everything
-below it, exactly how AccountBootStrap's own superadmin grant already works. Nothing new to build
-for that "except the global role/permission" case; it falls out of the existing tree filter.
-
-Login is local-only today (LoginService/JwtAuthentication, permissions_app's own accounts). A
-pluggable external identity provider (OIDC/SAML/...) is a real, intentionally *not yet built*
-direction: it would need its own IServiceEndpoint (or IAuthentication) implementation on the
-backend and, on this frontend, a different kind of screen entirely -- a redirect/device-code flow
-does not fit the "form with fields, one submit action" model ycappuccino-ui's Screen describes
-today. Not sketched here as a stub to avoid a half-built abstraction; flagged for when it is
-actually taken on.
+Login is local-only; an external identity provider is a future direction, not built here.
 """
 
 from pathlib import Path
@@ -107,8 +76,6 @@ class FrontendShell(YCappuccinoComponent):
         pass
 
     def log_in(self) -> bool:
-        """runs the login screen alone, keeping the decoded subject for the screens below;
-        returns whether login actually happened (False if the screen was closed without one)"""
         transport = ServiceEndpointTransport(self._endpoint)
         login_app = ScreenApp(load_login_screen(), transport)
         login_app.run()
@@ -118,7 +85,6 @@ class FrontendShell(YCappuccinoComponent):
         return True
 
     def run(self) -> None:
-        """log in, then change the password -- the original two-screen flow"""
         if not self.log_in():
             return
         transport = ServiceEndpointTransport(self._endpoint, subject=self._subject)
@@ -134,15 +100,9 @@ class FrontendShell(YCappuccinoComponent):
         self._run_crud_screen(load_role_permission_screen())
 
     def grant_role(self) -> None:
-        """scopes an existing role to an account within a tenant (organization) -- pick the root
-        organization ("system") to grant a role that should apply everywhere, see this module's
-        docstring, "Tenancy model": nothing tenant-specific lives on Role/RolePermission itself."""
         self._run_crud_screen(load_role_account_screen())
 
     def create_user(self) -> None:
-        """chained like run(): credentials (create_login, hashed), then profile (account), then
-        tenant grant (role_account) -- the same three records AccountBootStrap creates by hand for
-        the superadmin. Each step only continues if the previous one actually created something."""
         transport = ServiceEndpointTransport(self._endpoint, subject=self._subject)
         credentials_app = ScreenApp(load_create_login_screen(), transport)
         credentials_app.run()
@@ -160,3 +120,41 @@ class FrontendShell(YCappuccinoComponent):
         app = ScreenApp(screen, transport)
         app.run()
         return app
+
+    def run_menu(self) -> None:
+        print("permissions_app -- console d'administration")
+        while True:
+            if self._subject is None:
+                print("\n1) Se connecter\n0) Quitter")
+                choice = input("> ").strip()
+                if choice == "1":
+                    self.log_in()
+                elif choice == "0":
+                    return
+                continue
+
+            print(
+                "\n1) Changer mon mot de passe"
+                "\n2) Créer une organisation (tenant)"
+                "\n3) Créer un rôle"
+                "\n4) Créer une permission"
+                "\n5) Créer un utilisateur"
+                "\n6) Attribuer un rôle"
+                "\n0) Quitter"
+            )
+            choice = input("> ").strip()
+            if choice == "1":
+                transport = ServiceEndpointTransport(self._endpoint, subject=self._subject)
+                ScreenApp(load_change_password_screen(), transport).run()
+            elif choice == "2":
+                self.create_organization()
+            elif choice == "3":
+                self.create_role()
+            elif choice == "4":
+                self.grant_permission()
+            elif choice == "5":
+                self.create_user()
+            elif choice == "6":
+                self.grant_role()
+            elif choice == "0":
+                return

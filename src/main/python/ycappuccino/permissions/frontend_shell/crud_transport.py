@@ -1,14 +1,5 @@
-"""
-CrudTransport: a ycappuccino.ui.transport.Transport that calls a local ICrud directly in Python --
-no HTTP, same reasoning as ServiceEndpointTransport (see its docstring), for screens managing
-@Item models (Organization, Role, RolePermission, Account) rather than IExposedService operations.
-
-`service` is an item_id (e.g. "organization", "rolePermission" -- the @Item `name`, not its
-`plural`), `path` is either empty (list/create) or a single document id (read/update/delete).
-Every ICrud method is wired, not only create, so a future list/edit screen costs nothing extra
-here -- only create is used by today's screens (ui_shell has no list/table widget yet, see
-remote/docs/superpowers/specs/2026-09-16-ui-screen-library-checkpoint.md, "Pas encore fait").
-"""
+"""Transport calling a local ICrud directly (no HTTP). `service` is an item_id, `path` is empty
+or a single document id."""
 
 from typing import Any, Optional
 
