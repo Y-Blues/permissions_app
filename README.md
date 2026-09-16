@@ -124,6 +124,8 @@ permissions et utilisateurs — chaque écran chargé depuis un template YAML (`
 jamais construit à la main), rendu par `ycappuccino-ui-shell`. Voir le README de [ui](../ui/README.md)
 pour le modèle d'écran et [ui_shell](../ui_shell/README.md) pour le rendu.
 
+L'essayer : `example/console/run.sh` (login `superadmin` / `demo`, stockage en mémoire).
+
 **Choix explicite : la communication entre ce frontend et le backend `permissions_app` est un appel de
 service/CRUD Python (`ServiceEndpointTransport`/`CrudTransport`, un vrai `IServiceEndpoint`/`ICrud`
 injecté), jamais du HTTP.** `FrontendShell` ne s'installe donc que dans le **même** process/`Framework`
