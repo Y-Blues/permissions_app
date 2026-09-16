@@ -1,0 +1,15 @@
+title: Nouvelle permission
+fields:
+  - name: role
+    label: Rôle (identifiant)
+    required: true
+  - name: rights
+    label: Droits (séparés par des virgules, ex. read:book, *:*)
+    type: list
+    required: true
+actions:
+  - name: submit
+    label: Créer
+    endpoint:
+      service: rolePermission
+      method: POST

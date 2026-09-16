@@ -1,0 +1,17 @@
+title: Nouvel utilisateur — profil
+fields:
+  - name: name
+    label: Nom affiché
+    required: true
+  - name: login
+    label: Identifiant (créé à l'étape précédente)
+    required: true
+  - name: role
+    label: Rôle (identifiant)
+    required: true
+actions:
+  - name: submit
+    label: Créer le compte
+    endpoint:
+      service: account
+      method: POST

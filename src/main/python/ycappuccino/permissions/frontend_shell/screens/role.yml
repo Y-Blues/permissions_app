@@ -1,0 +1,11 @@
+title: Nouveau rôle
+fields:
+  - name: name
+    label: Nom
+    required: true
+actions:
+  - name: submit
+    label: Créer
+    endpoint:
+      service: role
+      method: POST

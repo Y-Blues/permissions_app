@@ -118,21 +118,45 @@ class TestAuthorization(unittest.IsolatedAsyncioTestCase):
 
 ## Frontend shell
 
-`frontend_shell/` (`FrontendShell`, `ycappuccino.permissions.frontend_shell.main`) : connexion puis
-changement de mot de passe, deux écrans chargés depuis des templates YAML (`frontend_shell/screens/`, pas
-construits à la main), rendus en terminal par `ycappuccino-ui-shell`. Voir le README de
-[ui](../ui/README.md) pour le modèle d'écran et [ui_shell](../ui_shell/README.md) pour le rendu.
+`frontend_shell/` (`FrontendShell`, `ycappuccino.permissions.frontend_shell.main`) : console d'admin en
+terminal — connexion, changement de mot de passe, et gestion des organisations (tenants), rôles,
+permissions et utilisateurs — chaque écran chargé depuis un template YAML (`frontend_shell/screens/`,
+jamais construit à la main), rendu par `ycappuccino-ui-shell`. Voir le README de [ui](../ui/README.md)
+pour le modèle d'écran et [ui_shell](../ui_shell/README.md) pour le rendu.
 
 **Choix explicite : la communication entre ce frontend et le backend `permissions_app` est un appel de
-service Python (`ServiceEndpointTransport`, un vrai `IServiceEndpoint` injecté), jamais du HTTP.**
-`FrontendShell` ne s'installe donc que dans le **même** process/`Framework` que le backend — le sujet
-décodé du jeton de connexion (`jwt_codec.decode`) est transmis directement au deuxième appel, sans
-en-tête `Authorization` puisqu'il n'y a aucune requête HTTP. Faire tourner ce frontend comme un vrai
-client séparé (un autre process, une autre machine) demande le dispatch typé et authentifié entre pairs
-que `remote` est censé fournir — conçu mais **pas encore implémenté**
+service/CRUD Python (`ServiceEndpointTransport`/`CrudTransport`, un vrai `IServiceEndpoint`/`ICrud`
+injecté), jamais du HTTP.** `FrontendShell` ne s'installe donc que dans le **même** process/`Framework`
+que le backend — le sujet décodé du jeton de connexion (`jwt_codec.decode`) est transmis directement aux
+appels suivants, sans en-tête `Authorization` puisqu'il n'y a aucune requête HTTP. Faire tourner ce
+frontend comme un vrai client séparé (un autre process, une autre machine) demande le dispatch typé et
+authentifié entre pairs que `remote` est censé fournir — conçu mais **pas encore implémenté**
 (`remote/docs/superpowers/specs/2026-09-16-transparent-rpc-design.md`, plan à
 `remote/docs/superpowers/plans/2026-09-16-transparent-rpc.md`) : tant que ce n'est pas prêt, ce frontend
 reste un outil mono-process, voir la docstring de `main.py` pour le détail.
+
+**Modèle de tenancy** (voir « Multi-tenant » plus haut) : `Role`/`RolePermission` ne sont **pas** eux-mêmes
+liés à un tenant — leur définition est la même partout. C'est `RoleAccount` (écran « Attribuer un rôle »,
+`FrontendShell.grant_role()`) qui scope réellement une attribution à une organisation. Un rôle « global »
+(ex. `admin`) n'est pas un cas particulier du modèle de données : on l'attribue simplement à
+l'organisation racine (`system`) — le filtre par descendance d'`OrganizationTree` (voir plus haut) fait
+alors qu'un sujet scopé à la racine voit tout en dessous, exactement comme le `superadmin` de
+`AccountBootStrap`.
+
+**Créer un utilisateur** (`FrontendShell.create_user()`) enchaîne 3 écrans, jamais un seul : identifiants
+(`create_login`, un appel de service Python vers `CreateLoginService` — seul point d'entrée sûr pour un
+mot de passe haché, une écriture CRUD générique sur `login` écrirait le mot de passe en clair, voir la
+docstring de ce service), profil (`account`, CRUD), puis attribution du rôle dans un tenant
+(`role_account`, CRUD) — les mêmes trois enregistrements qu'`AccountBootStrap` crée à la main pour le
+superadmin.
+
+**Connexion : locale aujourd'hui, fournisseur d'identité externe non construit.**
+`LoginService`/`JwtAuthentication` n'authentifient que des comptes `permissions_app` locaux. Brancher un
+fournisseur externe (OIDC/SAML/...) est une direction réelle mais **volontairement pas commencée** : côté
+backend il faudrait son propre `IExposedService`/`IAuthentication`, côté frontend un tout autre type
+d'écran (un flux de redirection/device-code ne rentre pas dans le modèle actuel de `Screen`, « un
+formulaire, une action ») — non ébauché ici pour éviter une abstraction à moitié construite, voir la
+docstring de `main.py`.
 
 ## Développer permissions_app
 
