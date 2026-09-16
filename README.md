@@ -116,6 +116,24 @@ class TestAuthorization(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await authorization.is_authorized(subject, "read", "book"))
 ```
 
+## Frontend shell
+
+`frontend_shell/` (`FrontendShell`, `ycappuccino.permissions.frontend_shell.main`) : connexion puis
+changement de mot de passe, deux écrans chargés depuis des templates YAML (`frontend_shell/screens/`, pas
+construits à la main), rendus en terminal par `ycappuccino-ui-shell`. Voir le README de
+[ui](../ui/README.md) pour le modèle d'écran et [ui_shell](../ui_shell/README.md) pour le rendu.
+
+**Choix explicite : la communication entre ce frontend et le backend `permissions_app` est un appel de
+service Python (`ServiceEndpointTransport`, un vrai `IServiceEndpoint` injecté), jamais du HTTP.**
+`FrontendShell` ne s'installe donc que dans le **même** process/`Framework` que le backend — le sujet
+décodé du jeton de connexion (`jwt_codec.decode`) est transmis directement au deuxième appel, sans
+en-tête `Authorization` puisqu'il n'y a aucune requête HTTP. Faire tourner ce frontend comme un vrai
+client séparé (un autre process, une autre machine) demande le dispatch typé et authentifié entre pairs
+que `remote` est censé fournir — conçu mais **pas encore implémenté**
+(`remote/docs/superpowers/specs/2026-09-16-transparent-rpc-design.md`, plan à
+`remote/docs/superpowers/plans/2026-09-16-transparent-rpc.md`) : tant que ce n'est pas prêt, ce frontend
+reste un outil mono-process, voir la docstring de `main.py` pour le détail.
+
 ## Développer permissions_app
 
 ```bash

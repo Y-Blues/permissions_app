@@ -1,0 +1,15 @@
+title: Connexion
+fields:
+  - name: login
+    label: Identifiant
+    required: true
+  - name: password
+    label: Mot de passe
+    type: password
+    required: true
+actions:
+  - name: submit
+    label: Se connecter
+    endpoint:
+      service: login
+      method: POST
