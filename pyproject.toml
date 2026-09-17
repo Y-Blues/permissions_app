@@ -16,6 +16,13 @@ dependencies = [
     "ycappuccino-client",
 ]
 
+[dependency-groups]
+# the storage and backend processes of example/three_processes, started by its end-to-end test
+dev = [
+    "ycappuccino-http-server",
+    "ycappuccino-remote",
+]
+
 [build-system]
 requires = ["uv_build>=0.12.13,<0.13"]
 build-backend = "uv_build"
@@ -34,3 +41,5 @@ ycappuccino-ui = { path = "../ui", editable = true }
 ycappuccino-ui-shell = { path = "../ui_shell", editable = true }
 ycappuccino-ui-web = { path = "../ui_web", editable = true }
 ycappuccino-client = { path = "../client", editable = true }
+ycappuccino-http-server = { path = "../http_server", editable = true }
+ycappuccino-remote = { path = "../remote", editable = true }

@@ -176,6 +176,37 @@ de passe affiché sur l'écran, connexion, création d'une organisation (relue e
 création d'un utilisateur en trois écrans puis connexion de cet utilisateur, déconnexion.  Vérifié aussi
 par `example/web/run.sh` : page, wheels et `/api` servis par le même backend via `hosts`.
 
+## Trois processus : stockage, backend, frontend
+
+`example/three_processes/run.sh` lance la même application répartie sur trois processus Python, qui se
+parlent par les appels JSON-RPC signés de [`remote`](../remote/README.md) :
+
+| Processus | Contient | Appelle |
+|---|---|---|
+| `storage` (http://localhost:8201) | `MemoryStorage` (`IStorage`) | — |
+| `backend` (http://localhost:8202) | `Manager`, use cases CRUD et services, permissions (connexion, JWT, autorisation), API HTTP | `IStorage` du stockage |
+| `frontend` (ce terminal) | la console d'administration (`FrontendShell`) | `ILoginService`, `IServiceEndpoint`, `ICrud` du backend |
+
+Login `admin` / `admin`. Quitter la console arrête les deux autres ; leurs journaux sont dans
+`example/three_processes/logs/`.
+
+- **La frontière du stockage est `IStorage`** et non `IManager` : les méthodes d'`IManager` prennent et
+  rendent des `Model`, qu'un appel JSON ne transporte pas ; celles d'`IStorage` n'échangent que des
+  documents. Le `Manager` (items, filtres, triggers) reste donc dans le backend.
+- **Aucun stockage partagé pour se trouver** : chaque processus déclare ses pairs dans son
+  `application.yml` (`ConfiguredPeers`, avec un secret partagé qui signe chaque appel). Le frontend n'a
+  ni stockage ni serveur HTTP : il est déclaré sans adresse chez le backend, seulement pour authentifier
+  ses appels.
+- **Les proxies** sont créés par `ComponentDirectory`, limités aux interfaces utiles (`specifications`) et
+  redécouverts toutes les deux secondes : l'ordre de démarrage est libre, un composant qui en dépend
+  (le `Manager`, la console) devient valide dès que son proxy existe.
+- **Le sujet** de l'utilisateur connecté sur la console accompagne chaque appel vers le backend, signé ;
+  le backend applique ses autorisations comme pour une requête HTTP.
+
+`test_three_processes_example.py` lance le stockage et le backend en sous-processus depuis ces mêmes
+fichiers de configuration, pilote la vraie console (connexion, création d'un rôle) et relit le rôle
+directement dans l'`IStorage` du processus de stockage.
+
 **Modèle de tenancy** (voir « Multi-tenant » plus haut) : `Role`/`RolePermission` ne sont **pas** eux-mêmes
 liés à un tenant — leur définition est la même partout. C'est `RoleAccount` (écran « Attribuer un rôle »,
 `FrontendShell.grant_role()`) qui scope réellement une attribution à une organisation. Un rôle « global »

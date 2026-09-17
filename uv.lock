@@ -369,6 +369,27 @@ requires-dist = [
 ]
 
 [[package]]
+name = "ycappuccino-http-server"
+version = "0.1.0"
+source = { editable = "../http_server" }
+dependencies = [
+    { name = "ycappuccino-api" },
+    { name = "ycappuccino-core" },
+    { name = "ycappuccino-endpoints-service" },
+    { name = "ycappuccino-endpoints-storage" },
+    { name = "ycappuccino-storage" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ycappuccino-api", editable = "../api" },
+    { name = "ycappuccino-core", editable = "../core" },
+    { name = "ycappuccino-endpoints-service", editable = "../endpoints_service" },
+    { name = "ycappuccino-endpoints-storage", editable = "../endpoints_storage" },
+    { name = "ycappuccino-storage", editable = "../storage" },
+]
+
+[[package]]
 name = "ycappuccino-permissions"
 version = "0.1.0"
 source = { editable = "." }
@@ -385,6 +406,12 @@ dependencies = [
     { name = "ycappuccino-ui-web" },
 ]
 
+[package.dev-dependencies]
+dev = [
+    { name = "ycappuccino-http-server" },
+    { name = "ycappuccino-remote" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "pyjwt", specifier = ">=2.8" },
@@ -397,6 +424,35 @@ requires-dist = [
     { name = "ycappuccino-ui", editable = "../ui" },
     { name = "ycappuccino-ui-shell", editable = "../ui_shell" },
     { name = "ycappuccino-ui-web", editable = "../ui_web" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ycappuccino-http-server", editable = "../http_server" },
+    { name = "ycappuccino-remote", editable = "../remote" },
+]
+
+[[package]]
+name = "ycappuccino-remote"
+version = "0.1.0"
+source = { editable = "../remote" }
+dependencies = [
+    { name = "ycappuccino-api" },
+    { name = "ycappuccino-core" },
+    { name = "ycappuccino-storage" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ycappuccino-api", editable = "../api" },
+    { name = "ycappuccino-core", editable = "../core" },
+    { name = "ycappuccino-storage", editable = "../storage" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "ycappuccino-endpoints-service", editable = "../endpoints_service" },
+    { name = "ycappuccino-http-server", editable = "../http_server" },
 ]
 
 [[package]]

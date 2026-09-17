@@ -1,0 +1,27 @@
+---
+# process 1 -- storage: the documents, in memory (MemoryStorage). Only the backend calls it, signed, through
+# __remote_dispatch__; the CRUD use cases are loaded because the HTTP entry point requires them.
+name: storage
+bundle_prefix:
+  - ycappuccino.storage
+  - ycappuccino.endpoints_storage
+  - ycappuccino.endpoints_service
+  - ycappuccino.http_server
+  - ycappuccino.remote.dispatch
+  - ycappuccino.remote.capabilities
+  - ycappuccino.remote.configured_peers
+  - ycappuccino.remote.peer_authentication
+layers:
+  ycappuccino_storage_memory:
+    active: true
+components:
+  ConfiguredPeers:
+    peers: "backend"
+    secret: "change-me-secret-shared-by-the-three-processes"
+config:
+  http_server:
+    active: true
+    port: 8201
+    ip: localhost
+  shell:
+    console: false

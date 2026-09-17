@@ -1,0 +1,36 @@
+---
+# process 2 -- backend: Manager, CRUD and service use cases, permissions (login, JWT, authorization), HTTP.
+# No storage layer is active: its IStorage is a proxy to the storage process, created by ComponentDirectory.
+# The frontend calls it, signed, through __remote_dispatch__.
+name: backend
+bundle_prefix:
+  - ycappuccino.storage
+  - ycappuccino.endpoints_storage
+  - ycappuccino.endpoints_service
+  - ycappuccino.http_server
+  - ycappuccino.permissions
+  - ycappuccino.remote.dispatch
+  - ycappuccino.remote.capabilities
+  - ycappuccino.remote.configured_peers
+  - ycappuccino.remote.peer_authentication
+  - ycappuccino.remote.component_directory
+components:
+  JwtAuthentication:
+    key: demo-secret-key-not-for-production-use
+  PasswordLogin:
+    key: demo-secret-key-not-for-production-use
+  FrontendShell:
+    key: demo-secret-key-not-for-production-use
+  ConfiguredPeers:
+    peers: "storage=http://localhost:8201, frontend"
+    secret: "change-me-secret-shared-by-the-three-processes"
+  ComponentDirectory:
+    specifications: "ycappuccino.api.storage.IStorage"
+    refresh: 2.0
+config:
+  http_server:
+    active: true
+    port: 8202
+    ip: localhost
+  shell:
+    console: false

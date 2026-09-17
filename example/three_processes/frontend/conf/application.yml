@@ -1,0 +1,20 @@
+---
+# process 3 -- frontend: the terminal admin console. No storage, no HTTP server: its ILoginService,
+# IServiceEndpoint and ICrud are proxies to the backend, created by ComponentDirectory.
+name: frontend
+bundle_prefix:
+  - ycappuccino.remote.configured_peers
+  - ycappuccino.remote.component_directory
+  - ycappuccino.permissions.frontend_shell
+components:
+  ConfiguredPeers:
+    peers: "backend=http://localhost:8202"
+    secret: "change-me-secret-shared-by-the-three-processes"
+  ComponentDirectory:
+    specifications: "ycappuccino.api.permissions.ILoginService, ycappuccino.api.endpoints_service.IServiceEndpoint, ycappuccino.api.endpoints_storage.ICrud"
+    refresh: 2.0
+  FrontendShell:
+    key: demo-secret-key-not-for-production-use
+config:
+  shell:
+    console: false
