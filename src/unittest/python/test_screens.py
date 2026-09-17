@@ -13,7 +13,8 @@ from ycappuccino.permissions.screens import (
     load_role_account_screen,
     load_role_permission_screen,
     load_role_screen,
-    with_defaults,
+    load_application,
+    load_screen,
 )
 
 
@@ -74,19 +75,41 @@ class TestScreensLoad(unittest.TestCase):
 
 
 
-class TestWithDefaults(unittest.TestCase):
+class TestApplication(unittest.TestCase):
+    """the layout both consoles render: menu, chained screens and their transports"""
 
-    def test_prefills_the_named_fields_only(self):
-        screen = with_defaults(load_role_account_screen(), account="created-id")
+    def test_the_menu_of_both_consoles(self):
+        self.assertEqual(
+            [entry.label for entry in load_application().menu],
+            [
+                "Changer mon mot de passe",
+                "Créer une organisation",
+                "Créer un rôle",
+                "Créer une permission",
+                "Créer un utilisateur",
+                "Attribuer un rôle",
+            ],
+        )
 
-        defaults = {a_field.name: a_field.default for a_field in screen.fields}
-        self.assertEqual(defaults, {"account": "created-id", "role": None, "organization": None})
-        self.assertIsNone({a_field.name: a_field.default for a_field in load_role_account_screen().fields}["account"])
+    def test_every_step_names_a_screen_and_a_known_transport(self):
+        application = load_application()
 
-    def test_an_unknown_field_is_refused(self):
-        with self.assertRaises(ValueError):
-            with_defaults(load_role_account_screen(), nope="x")
+        for step in [application.login] + [step for entry in application.menu for step in entry.steps]:
+            with self.subTest(screen=step.screen):
+                self.assertIsNotNone(load_screen(step.screen))
+                self.assertIn(step.transport, ("login", "services", "crud"))
 
+    def test_creating_a_user_prefills_the_login_then_the_account_id(self):
+        entry = next(entry for entry in load_application().menu if entry.label == "Créer un utilisateur")
+
+        self.assertEqual(
+            [(step.screen, step.transport, step.prefill) for step in entry.steps],
+            [
+                ("create_login", "services", {}),
+                ("account", "crud", {"login": "values.login"}),
+                ("role_account", "crud", {"account": "result._id"}),
+            ],
+        )
 
 if __name__ == "__main__":
     unittest.main()

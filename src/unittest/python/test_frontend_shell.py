@@ -1,31 +1,27 @@
 """
-Proves the frontend_shell wiring end-to-end with fake ILoginService/IServiceEndpoint/ICrud (no real network, no
-real HTTP, no real backend process -- exactly the point: this frontend talks to its backend as a
-Python service/CRUD call, see main.py's docstring): every screen loads correctly from its YAML
-template, and the subject decoded from a real login token (real ycappuccino.permissions.jwt_codec,
-only IServiceEndpoint/ICrud are fake) is carried across screens -- the same glue
-FrontendShell.log_in()/run()/create_user() perform, without invoking their own blocking
-ScreenApp.run() (never unit tested directly, same convention as ycappuccino-ui-shell's own
-run_screen()).
+The terminal admin console, driven through its real textual application (ShellApplication over the shared
+application.yml): every backend interface is a fake. After login, the subject decoded from the real token
+(ycappuccino.permissions.jwt_codec) goes with every call, since the console runs next to its backend.
 """
 
 import unittest
 
+from textual.widgets import Button, Label
+
+from ycappuccino.api.endpoints_storage import InvalidRequest
 from ycappuccino.permissions import jwt_codec
-from ycappuccino.permissions.screens import (
-    load_account_screen,
-    load_change_password_screen,
-    load_create_login_screen,
-    load_login_screen,
-    load_organization_screen,
-    load_role_account_screen,
-    load_role_permission_screen,
-    with_defaults,
-)
-from ycappuccino.ui.ycappuccino_transport import ComponentTransport, CrudTransport, ServiceEndpointTransport
-from ycappuccino.ui_shell.app import ScreenApp
+from ycappuccino.permissions.frontend_shell.main import FrontendShell
 
 _KEY = "test-key"
+_TOKEN = jwt_codec.encode({"sub": "superadmin", "tid": "system"}, _KEY, 3600)
+
+
+class FakeLogin:
+
+    async def login(self, login, password):
+        if password != "demo":
+            raise InvalidRequest("wrong login or password")
+        return _TOKEN
 
 
 class FakeResult:
@@ -35,157 +31,108 @@ class FakeResult:
 
 class FakeServiceEndpoint:
 
-    def __init__(self, results: dict):
-        self.results = results
+    def __init__(self):
         self.calls = []
 
     async def call(self, name, method, extra_path, params, body, subject):
-        self.calls.append((name, method, extra_path, params, body, subject))
-        return FakeResult(self.results[name])
-
-
-class FakeLogin:
-
-    def __init__(self, token):
-        self.token = token
-        self.calls = []
-
-    async def login(self, login, password):
-        self.calls.append((login, password))
-        return self.token
+        self.calls.append((name, body, subject))
+        return FakeResult({})
 
 
 class FakeCrud:
 
-    def __init__(self, result=None):
-        self.result = result
+    def __init__(self):
         self.calls = []
 
     async def create(self, item_id, fields, subject=None):
-        self.calls.append(("create", item_id, fields, subject))
-        return self.result
+        self.calls.append((item_id, fields, subject))
+        return {"_id": "created"}
 
 
-class TestChaining(unittest.IsolatedAsyncioTestCase):
+class TestFrontendShell(unittest.IsolatedAsyncioTestCase):
 
-    async def test_login_subject_is_carried_to_change_password(self):
-        token = jwt_codec.encode({"sub": "aurelien", "tid": "system"}, _KEY, 3600)
-        login = FakeLogin(token)
-        endpoint = FakeServiceEndpoint(results={"change_password": {}})
+    def setUp(self):
+        self.endpoint = FakeServiceEndpoint()
+        self.crud = FakeCrud()
+        self.shell = FrontendShell(FakeLogin(), self.endpoint, self.crud, key=_KEY)
+        self.app = self.shell.application()
 
-        login_app = ScreenApp(load_login_screen(), ComponentTransport({"login": login}))
-        async with login_app.run_test() as pilot:
-            login_app.query_one("#field-login").value = "aurelien"
-            login_app.query_one("#field-password").value = "secret"
-            await pilot.click("#action-submit")
+    async def _submit(self, pilot, **values):
+        for name, value in values.items():
+            self.app.query_one(f"#field-{name}").value = value
+        await pilot.click("#action-submit")
+        await pilot.pause()
 
-        self.assertEqual((login_app.last_result, login.calls), (token, [("aurelien", "secret")]))
+    async def _choose(self, pilot, label):
+        button = next(button for button in self.app.query(Button) if str(button.label) == label)
+        await pilot.click(f"#{button.id}")
+        await pilot.pause()
 
-        # the same one line FrontendShell.log_in() performs
-        transport = ServiceEndpointTransport(endpoint, subject=jwt_codec.decode(login_app.last_result, _KEY))
+    async def _sign_in(self, pilot):
+        await pilot.pause()
+        await self._submit(pilot, login="superadmin", password="demo")
 
-        change_app = ScreenApp(load_change_password_screen(), transport)
-        async with change_app.run_test() as pilot:
-            change_app.query_one("#field-login").value = "aurelien"
-            change_app.query_one("#field-password").value = "secret"
-            change_app.query_one("#field-new_password").value = "new-secret"
-            await pilot.click("#action-submit")
+    def _subject(self):
+        return {"sub": "superadmin", "tid": "system"}
 
-        change_password_call = endpoint.calls[0]
-        self.assertEqual(change_password_call[0], "change_password")
-        self.assertEqual(
-            change_password_call[4],
-            {"login": "aurelien", "password": "secret", "new_password": "new-secret"},
-        )
-        subject = change_password_call[5]
-        self.assertEqual(subject["sub"], "aurelien")
-        self.assertEqual(subject["tid"], "system")
+    async def test_wrong_credentials_stay_on_the_login_screen(self):
+        async with self.app.run_test() as pilot:
+            await pilot.pause()
+            await self._submit(pilot, login="superadmin", password="wrong")
 
-    async def test_create_organization_calls_crud_create_with_the_subject(self):
-        crud = FakeCrud(result={"_id": "acme", "name": "Acme"})
-        transport = CrudTransport(crud, subject={"sub": "admin"})
+            self.assertEqual(str(self.app.query_one("#status", Label).content), "wrong login or password")
 
-        app = ScreenApp(load_organization_screen(), transport)
-        async with app.run_test() as pilot:
-            app.query_one("#field-name").value = "Acme"
-            await pilot.click("#action-submit")
+    async def test_a_crud_entry_creates_with_the_subject_of_the_token(self):
+        async with self.app.run_test() as pilot:
+            await self._sign_in(pilot)
+            await self._choose(pilot, "Créer une organisation")
+            await self._submit(pilot, name="Acme")
 
-        self.assertEqual(crud.calls, [("create", "organization", {"name": "Acme", "father": ""}, {"sub": "admin"})])
+            self.assertEqual(len(self.crud.calls), 1)
+            item_id, fields, subject = self.crud.calls[0]
+            self.assertEqual((item_id, fields["name"]), ("organization", "Acme"))
+            self.assertEqual({key: subject[key] for key in ("sub", "tid")}, self._subject())
+            self.assertEqual(str(self.app.query_one("#message", Label).content), "Enregistré.")
 
-    async def test_grant_permission_splits_rights_into_a_list(self):
-        crud = FakeCrud(result={})
-        transport = CrudTransport(crud, subject={"sub": "admin"})
+    async def test_changing_the_password_calls_the_exposed_service(self):
+        async with self.app.run_test() as pilot:
+            await self._sign_in(pilot)
+            await self._choose(pilot, "Changer mon mot de passe")
+            await self._submit(pilot, login="superadmin", password="demo", new_password="new")
 
-        app = ScreenApp(load_role_permission_screen(), transport)
-        async with app.run_test() as pilot:
-            app.query_one("#field-role").value = "editor"
-            app.query_one("#field-rights").value = "read:book, write:book"
-            await pilot.click("#action-submit")
+            name, body, subject = self.endpoint.calls[0]
+            self.assertEqual((name, body), ("change_password", {"login": "superadmin", "password": "demo", "new_password": "new"}))
+            self.assertEqual(subject["sub"], "superadmin")
 
-        self.assertEqual(
-            crud.calls,
-            [("create", "rolePermission", {"role": "editor", "rights": ["read:book", "write:book"]}, {"sub": "admin"})],
-        )
+    async def test_creating_a_user_prefills_the_login_then_the_account_id(self):
+        async with self.app.run_test() as pilot:
+            await self._sign_in(pilot)
+            await self._choose(pilot, "Créer un utilisateur")
+            await self._submit(pilot, login="bob", password="secret")
 
-    async def test_create_user_chains_credentials_then_profile_then_tenant_grant(self):
-        endpoint = FakeServiceEndpoint(results={"create_login": {}})
-        crud = FakeCrud(result={"_id": "bob"})
-        subject = {"sub": "admin"}
-        credentials_transport = ServiceEndpointTransport(endpoint, subject=subject)
-        crud_transport = CrudTransport(crud, subject=subject)
+            self.assertEqual(self.app.query_one("#field-login").value, "bob")
+            await self._submit(pilot, name="Bob", role="editor")
+            self.assertEqual(self.app.query_one("#field-account").value, "created")
+            await self._submit(pilot, role="editor", organization="acme")
 
-        # 1. credentials (a Python service call, hashed password -- see CreateLoginService)
-        credentials_app = ScreenApp(load_create_login_screen(), credentials_transport)
-        async with credentials_app.run_test() as pilot:
-            credentials_app.query_one("#field-login").value = "bob"
-            credentials_app.query_one("#field-password").value = "secret"
-            await pilot.click("#action-submit")
+            self.assertEqual(self.endpoint.calls[0][:2], ("create_login", {"login": "bob", "password": "secret"}))
+            self.assertEqual(
+                [(item_id, fields) for item_id, fields, _ in self.crud.calls],
+                [
+                    ("account", {"name": "Bob", "login": "bob", "role": "editor"}),
+                    ("roleAccount", {"account": "created", "role": "editor", "organization": "acme"}),
+                ],
+            )
 
-        self.assertIsNotNone(credentials_app.last_result)  # FrontendShell.create_user() only
-        # continues to the next screen when this is not None, exactly like login/create_user
+    async def test_signing_out_forgets_the_subject(self):
+        async with self.app.run_test() as pilot:
+            await self._sign_in(pilot)
+            await self._choose(pilot, "Se déconnecter")
+            await self._sign_in(pilot)
+            await self._choose(pilot, "Se déconnecter")
 
-        # 2. profile (a CRUD create referencing the login just created)
-        profile_app = ScreenApp(load_account_screen(), crud_transport)
-        async with profile_app.run_test() as pilot:
-            profile_app.query_one("#field-name").value = "Bob"
-            profile_app.query_one("#field-login").value = "bob"
-            profile_app.query_one("#field-role").value = "editor"
-            await pilot.click("#action-submit")
-
-        self.assertIsNotNone(profile_app.last_result)
-
-        # 3. tenant grant (scopes the role to one organization -- the actual "tenancy" link)
-        grant_app = ScreenApp(load_role_account_screen(), crud_transport)
-        async with grant_app.run_test() as pilot:
-            grant_app.query_one("#field-account").value = "bob"
-            grant_app.query_one("#field-role").value = "editor"
-            grant_app.query_one("#field-organization").value = "acme"
-            await pilot.click("#action-submit")
-
-        self.assertEqual(endpoint.calls[0][0], "create_login")
-        self.assertEqual(endpoint.calls[0][4], {"login": "bob", "password": "secret"})
-        self.assertEqual(
-            crud.calls,
-            [
-                ("create", "account", {"name": "Bob", "login": "bob", "role": "editor"}, subject),
-                ("create", "roleAccount", {"account": "bob", "role": "editor", "organization": "acme"}, subject),
-            ],
-        )
-
-
-    async def test_a_prefilled_screen_shows_what_the_previous_step_created(self):
-        crud = FakeCrud(result={})
-        app = ScreenApp(with_defaults(load_role_account_screen(), account="created-id"), CrudTransport(crud))
-
-        async with app.run_test() as pilot:
-            self.assertEqual(app.query_one("#field-account").value, "created-id")
-            app.query_one("#field-role").value = "editor"
-            app.query_one("#field-organization").value = "acme"
-            await pilot.click("#action-submit")
-
-        self.assertEqual(
-            crud.calls, [("create", "roleAccount", {"account": "created-id", "role": "editor", "organization": "acme"}, None)]
-        )
+            self.assertEqual(len(self.app.query("#field-login")), 1)
+            self.assertIsNone(self.shell.subject)
 
 
 if __name__ == "__main__":

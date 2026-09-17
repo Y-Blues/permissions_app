@@ -116,13 +116,22 @@ class TestAuthorization(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await authorization.is_authorized(subject, "read", "book"))
 ```
 
+## Une console, deux rendus
+
+Le layout de la console d'admin est décrit une seule fois,
+`src/main/python/ycappuccino/permissions/screens/application.yml` (voir « Une console entière » dans le
+README de [ui](../ui/README.md)) : écran de connexion, menu (changer son mot de passe, créer une
+organisation, un rôle, une permission, un utilisateur, attribuer un rôle), écrans enchaînés et
+pré-remplis, message « Enregistré. », déconnexion. Les écrans sont les templates YAML du même dossier.
+La console terminal le rend avec `ShellApplication` (`ui_shell`), la console web avec `WebApplication`
+(`ui_web`) : modifier ce fichier change les deux.
+
+Les étapes nomment l'un des trois transports que chaque console fournit : `login` (`ILoginService`),
+`services` (`IServiceEndpoint`), `crud` (`ICrud`).
+
 ## Frontend shell
 
-`frontend_shell/` (`FrontendShell`, `ycappuccino.permissions.frontend_shell.main`) : console d'admin en
-terminal — connexion, changement de mot de passe, et gestion des organisations (tenants), rôles,
-permissions et utilisateurs — chaque écran chargé depuis un template YAML (`ycappuccino.permissions.screens`, partagé avec la
-console web, jamais construit à la main), rendu par `ycappuccino-ui-shell`. Voir le README de [ui](../ui/README.md)
-pour le modèle d'écran et [ui_shell](../ui_shell/README.md) pour le rendu.
+`frontend_shell/` (`FrontendShell`) : la console en terminal, une App textual (`run_menu()`).
 
 L'essayer : `example/console/run.sh` (login `superadmin` / `demo`, stockage en mémoire).
 
@@ -133,15 +142,10 @@ tourne dans le process du backend et transmet aux appels suivants le sujet déco
 
 ## Frontend web
 
-`frontend_web/` (`PermissionsWebApp`) : la même console dans un navigateur, sur les mêmes écrans, avec la
-même navigation (connexion, menu, formulaires, création d'utilisateur en trois écrans, déconnexion). Elle
-tourne dans le `Framework` client de [`client`](../client/README.md) (Pyodide) et ne dépend que
+`frontend_web/` (`PermissionsWebApp`) : la même console dans un navigateur. Elle tourne dans le `Framework` client de [`client`](../client/README.md) (Pyodide) et ne dépend que
 d'interfaces : `ILoginService`, `IServiceEndpoint` et `ICrud` (les proxies générés), `ISession` (le jeton)
 et `IWebPage` ([`ui_web`](../ui_web/README.md), la page où elle dessine). Elle n'envoie jamais de sujet :
 le backend le déduit du jeton.
-
-Chaque étape de la création d'un utilisateur est pré-remplie avec ce que la précédente a créé :
-l'identifiant, puis l'id que le backend a donné au compte (celui qu'attend l'attribution du rôle).
 
 L'essayer : `example/web/run.sh`, puis ouvrir http://localhost:8180 (login `superadmin` / `demo`, stockage en
 mémoire). Le script construit les wheels dans `example/web/site/`, y copie la page générique de `client` et
@@ -166,8 +170,6 @@ Les wheels se construisent avec `uv build --wheel` dans `api`, `core`, `client`,
 de passe affiché sur l'écran, connexion, création d'une organisation (relue ensuite par l'API REST),
 création d'un utilisateur en trois écrans puis connexion de cet utilisateur, déconnexion.  Vérifié aussi
 par `example/web/run.sh` : page, wheels et `/api` servis par le même backend via `hosts`.
-
-La console terminal pré-remplit de la même façon (`screens.with_defaults`).
 
 **Modèle de tenancy** (voir « Multi-tenant » plus haut) : `Role`/`RolePermission` ne sont **pas** eux-mêmes
 liés à un tenant — leur définition est la même partout. C'est `RoleAccount` (écran « Attribuer un rôle »,
