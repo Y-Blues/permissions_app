@@ -20,6 +20,7 @@ from ycappuccino.permissions.screens import (
     load_organization_screen,
     load_role_account_screen,
     load_role_permission_screen,
+    with_defaults,
 )
 from ycappuccino.ui.ycappuccino_transport import ComponentTransport, CrudTransport, ServiceEndpointTransport
 from ycappuccino.ui_shell.app import ScreenApp
@@ -169,6 +170,21 @@ class TestChaining(unittest.IsolatedAsyncioTestCase):
                 ("create", "account", {"name": "Bob", "login": "bob", "role": "editor"}, subject),
                 ("create", "roleAccount", {"account": "bob", "role": "editor", "organization": "acme"}, subject),
             ],
+        )
+
+
+    async def test_a_prefilled_screen_shows_what_the_previous_step_created(self):
+        crud = FakeCrud(result={})
+        app = ScreenApp(with_defaults(load_role_account_screen(), account="created-id"), CrudTransport(crud))
+
+        async with app.run_test() as pilot:
+            self.assertEqual(app.query_one("#field-account").value, "created-id")
+            app.query_one("#field-role").value = "editor"
+            app.query_one("#field-organization").value = "acme"
+            await pilot.click("#action-submit")
+
+        self.assertEqual(
+            crud.calls, [("create", "roleAccount", {"account": "created-id", "role": "editor", "organization": "acme"}, None)]
         )
 
 

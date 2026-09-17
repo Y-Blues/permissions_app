@@ -13,6 +13,7 @@ from ycappuccino.permissions.screens import (
     load_role_account_screen,
     load_role_permission_screen,
     load_role_screen,
+    with_defaults,
 )
 
 
@@ -70,6 +71,21 @@ class TestScreensLoad(unittest.TestCase):
 
         self.assertEqual({a_field.name for a_field in screen.fields}, {"account", "role", "organization"})
         self.assertEqual(screen.actions[0].endpoint.service, "roleAccount")
+
+
+
+class TestWithDefaults(unittest.TestCase):
+
+    def test_prefills_the_named_fields_only(self):
+        screen = with_defaults(load_role_account_screen(), account="created-id")
+
+        defaults = {a_field.name: a_field.default for a_field in screen.fields}
+        self.assertEqual(defaults, {"account": "created-id", "role": None, "organization": None})
+        self.assertIsNone({a_field.name: a_field.default for a_field in load_role_account_screen().fields}["account"])
+
+    def test_an_unknown_field_is_refused(self):
+        with self.assertRaises(ValueError):
+            with_defaults(load_role_account_screen(), nope="x")
 
 
 if __name__ == "__main__":

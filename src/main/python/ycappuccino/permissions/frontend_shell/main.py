@@ -24,6 +24,7 @@ from ycappuccino.permissions.screens import (
     load_role_account_screen,
     load_role_permission_screen,
     load_role_screen,
+    with_defaults,
 )
 from ycappuccino.ui.model import Screen
 from ycappuccino.ui.ycappuccino_transport import ComponentTransport, CrudTransport, ServiceEndpointTransport
@@ -80,11 +81,14 @@ class FrontendShell(YCappuccinoComponent):
         if credentials_app.last_result is None:
             return
 
-        account_app = self._run_crud_screen(load_account_screen())
+        # each step prefilled with what the previous one created: the login, then the account's id
+        account_app = self._run_crud_screen(
+            with_defaults(load_account_screen(), login=credentials_app.last_values["login"])
+        )
         if account_app.last_result is None:
             return
 
-        self._run_crud_screen(load_role_account_screen())
+        self._run_crud_screen(with_defaults(load_role_account_screen(), account=account_app.last_result["_id"]))
 
     def _run_crud_screen(self, screen: Screen) -> ScreenApp:
         transport = CrudTransport(self._crud, subject=self._subject)

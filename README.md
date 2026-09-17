@@ -163,8 +163,7 @@ création d'un utilisateur en trois écrans puis connexion de cet utilisateur, d
 l'`/api` y étaient servis par un petit serveur de développement (fichiers statiques et proxy vers le
 backend) ; leur service par `hosts` n'est pas vérifié.
 
-La console terminal a encore le défaut que la console web corrige : son écran d'attribution demande l'id
-du compte sans le pré-remplir.
+La console terminal pré-remplit de la même façon (`screens.with_defaults`).
 
 **Modèle de tenancy** (voir « Multi-tenant » plus haut) : `Role`/`RolePermission` ne sont **pas** eux-mêmes
 liés à un tenant — leur définition est la même partout. C'est `RoleAccount` (écran « Attribuer un rôle »,
