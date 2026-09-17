@@ -12,7 +12,6 @@ run_screen()).
 import unittest
 
 from ycappuccino.permissions import jwt_codec
-from ycappuccino.permissions.frontend_shell.crud_transport import CrudTransport
 from ycappuccino.permissions.frontend_shell.main import (
     load_account_screen,
     load_change_password_screen,
@@ -23,7 +22,7 @@ from ycappuccino.permissions.frontend_shell.main import (
     load_role_permission_screen,
     load_role_screen,
 )
-from ycappuccino.permissions.frontend_shell.service_endpoint_transport import ServiceEndpointTransport
+from ycappuccino.ui.ycappuccino_transport import CrudTransport, ServiceEndpointTransport
 from ycappuccino.ui_shell.app import ScreenApp
 
 _KEY = "test-key"

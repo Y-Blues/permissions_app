@@ -127,8 +127,8 @@ pour le modèle d'écran et [ui_shell](../ui_shell/README.md) pour le rendu.
 L'essayer : `example/console/run.sh` (login `superadmin` / `demo`, stockage en mémoire).
 
 **Choix explicite : la communication entre ce frontend et le backend `permissions_app` est un appel de
-service/CRUD Python (`ServiceEndpointTransport`/`CrudTransport`, un vrai `IServiceEndpoint`/`ICrud`
-injecté), jamais du HTTP.** `FrontendShell` ne s'installe donc que dans le **même** process/`Framework`
+service/CRUD Python (`ServiceEndpointTransport`/`CrudTransport` de `ycappuccino.ui.ycappuccino_transport`,
+un vrai `IServiceEndpoint`/`ICrud` injecté), jamais du HTTP.** `FrontendShell` ne s'installe donc que dans le **même** process/`Framework`
 que le backend — le sujet décodé du jeton de connexion (`jwt_codec.decode`) est transmis directement aux
 appels suivants, sans en-tête `Authorization` puisqu'il n'y a aucune requête HTTP. Faire tourner ce
 frontend comme un vrai client séparé (un autre process, une autre machine) demande le dispatch typé et

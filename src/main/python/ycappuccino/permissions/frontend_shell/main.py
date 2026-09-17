@@ -17,8 +17,7 @@ from ycappuccino.api.core_base import YCappuccinoComponent
 from ycappuccino.api.endpoints_service import IServiceEndpoint
 from ycappuccino.api.endpoints_storage import ICrud
 from ycappuccino.permissions import jwt_codec
-from ycappuccino.permissions.frontend_shell.crud_transport import CrudTransport
-from ycappuccino.permissions.frontend_shell.service_endpoint_transport import ServiceEndpointTransport
+from ycappuccino.ui.ycappuccino_transport import CrudTransport, ServiceEndpointTransport
 from ycappuccino.ui.loader import load_screen_yaml
 from ycappuccino.ui.model import Screen
 from ycappuccino.ui_shell.app import ScreenApp

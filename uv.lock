@@ -393,10 +393,14 @@ version = "0.1.0"
 source = { editable = "../ui" }
 dependencies = [
     { name = "pyyaml" },
+    { name = "ycappuccino-api" },
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pyyaml" }]
+requires-dist = [
+    { name = "pyyaml" },
+    { name = "ycappuccino-api", editable = "../api" },
+]
 
 [[package]]
 name = "ycappuccino-ui-shell"
