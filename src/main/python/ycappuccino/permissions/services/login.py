@@ -6,6 +6,7 @@ from typing import Any
 
 from ycappuccino.api.endpoints_service import IExposedService, ServiceResult, ServiceRoute
 from ycappuccino.api.endpoints_storage import NotFound
+from ycappuccino.api.permissions import ILoginService
 from ycappuccino.api.storage import IManager
 from ycappuccino.permissions import jwt_codec, passwords
 
@@ -16,7 +17,7 @@ async def _issue_token(manager: IManager, key: str, timeout: int, body: dict) ->
     return jwt_codec.encode({"sub": account_id, "tid": organization_id}, key, timeout)
 
 
-class LoginService(IExposedService):
+class LoginService(IExposedService, ILoginService):
     name = "login"
     secure = False
     routes = (ServiceRoute(method="POST", summary="exchange a login and a password for a token"),)
@@ -40,8 +41,10 @@ class LoginService(IExposedService):
     ) -> ServiceResult:
         if method != "POST":
             raise NotFound("not found")
-        token = await _issue_token(self._manager, self._key, self._timeout, body)
-        return ServiceResult(body={"token": token})
+        return ServiceResult(body={"token": await self.login(body["login"], body["password"])})
+
+    async def login(self, login: str, password: str) -> str:
+        return await _issue_token(self._manager, self._key, self._timeout, {"login": login, "password": password})
 
 
 class LoginCookieService(IExposedService):

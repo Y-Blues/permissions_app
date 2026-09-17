@@ -30,6 +30,11 @@ class TestRolePermissionAuthorization(unittest.IsolatedAsyncioTestCase):
         role_permission.rights(rights)
         await self.manager.up_sert_model(role_permission)
 
+    async def test_a_subject_without_a_user_is_refused(self):
+        authorization = RolePermissionAuthorization(self.manager)
+
+        self.assertFalse(await authorization.is_authorized({"peer": "backend-1"}, "read", "book"))
+
     async def test_no_role_account_is_refused(self):
         authorization = RolePermissionAuthorization(self.manager)
 

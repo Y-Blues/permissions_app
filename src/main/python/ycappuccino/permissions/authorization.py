@@ -20,6 +20,9 @@ class RolePermissionAuthorization(IAuthorization):
         pass
 
     async def is_authorized(self, subject: dict, action: str, item_id: str) -> bool:
+        if "sub" not in subject or "tid" not in subject:
+            # a peer calling on nobody's behalf has no role: its trust is its own, not a user's
+            return False
         role_accounts = await self._manager.get_many(
             "roleAccount",
             {"filter": {"account.ref": subject["sub"], "organization.ref": subject["tid"]}},

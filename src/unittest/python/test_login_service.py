@@ -44,6 +44,19 @@ class TestLoginServices(unittest.IsolatedAsyncioTestCase):
         decoded = jwt_codec.decode(result.body["token"], "test-key")
         self.assertEqual((decoded["sub"], decoded["tid"]), ("acc-alice", "acme"))
 
+    async def test_typed_login_returns_a_valid_token(self):
+        service = LoginService(self.manager, key="test-key")
+
+        token = await service.login("alice", "secret")
+
+        decoded = jwt_codec.decode(token, "test-key")
+        self.assertEqual((decoded["sub"], decoded["tid"]), ("acc-alice", "acme"))
+
+    async def test_login_service_provides_the_typed_interface(self):
+        from ycappuccino.api.permissions import ILoginService
+
+        self.assertTrue(issubclass(LoginService, ILoginService))
+
     async def test_login_rejects_a_wrong_password(self):
         service = LoginService(self.manager, key="test-key")
 
