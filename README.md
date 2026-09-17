@@ -143,6 +143,11 @@ le backend le déduit du jeton.
 Chaque étape de la création d'un utilisateur est pré-remplie avec ce que la précédente a créé :
 l'identifiant, puis l'id que le backend a donné au compte (celui qu'attend l'attribution du rôle).
 
+L'essayer : `example/web/run.sh`, puis ouvrir http://localhost:8180 (login `superadmin` / `demo`, stockage en
+mémoire). Le script construit les wheels dans `example/web/site/`, y copie la page générique de `client` et
+`ycappuccino.json`, puis démarre un seul process : le backend, qui sert aussi `site/` par `hosts` (composant
+`WebSite`, `example/web/webhost/site.py`), donc la page et l'`/api` partagent la même origine.
+
 **Déployer.** Le backend charge, en plus de ses modules habituels, `ycappuccino.remote.dispatch` et
 `ycappuccino.remote.capabilities`. La page générique `client/static/index.html` est servie sur la même
 origine que son `/api`, à côté des wheels et de `example/web/ycappuccino.json` :
@@ -159,9 +164,8 @@ Les wheels se construisent avec `uv build --wheel` dans `api`, `core`, `client`,
 
 **Vérifié le 2026-09-17** dans Chromium (Playwright, Pyodide 0.28.3), devant un vrai backend : mauvais mot
 de passe affiché sur l'écran, connexion, création d'une organisation (relue ensuite par l'API REST),
-création d'un utilisateur en trois écrans puis connexion de cet utilisateur, déconnexion. La page et
-l'`/api` y étaient servis par un petit serveur de développement (fichiers statiques et proxy vers le
-backend) ; leur service par `hosts` n'est pas vérifié.
+création d'un utilisateur en trois écrans puis connexion de cet utilisateur, déconnexion.  Vérifié aussi
+par `example/web/run.sh` : page, wheels et `/api` servis par le même backend via `hosts`.
 
 La console terminal pré-remplit de la même façon (`screens.with_defaults`).
 
