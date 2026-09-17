@@ -3,12 +3,15 @@ import unittest
 
 from permissions_fixtures import create_manager
 
-from ycappuccino.api.endpoints_service import ServiceRoute
+from ycappuccino.api.decorators import get_rpc_methods
 from ycappuccino.api.endpoints_storage import InvalidRequest, NotFound
+from ycappuccino.api.permissions import ILoginService
+from ycappuccino.endpoints_service.endpoint import ServiceEndpoint
 from ycappuccino.permissions import jwt_codec
 from ycappuccino.permissions.models.account import Account
 from ycappuccino.permissions.models.login import Login
 from ycappuccino.permissions.models.role_account import RoleAccount
+from ycappuccino.permissions.password_login import PasswordLogin
 from ycappuccino.permissions.services.login import LoginCookieService, LoginService
 
 
@@ -36,63 +39,61 @@ class TestLoginServices(unittest.IsolatedAsyncioTestCase):
         role_account.organization("acme")
         await self.manager.up_sert_model(role_account)
 
-    async def test_login_returns_a_valid_token(self):
-        service = LoginService(self.manager, key="test-key")
+        self.password_login = PasswordLogin(self.manager, key="test-key")
+        self.endpoint = ServiceEndpoint([LoginService(self.password_login), LoginCookieService(self.password_login)], [])
 
-        result = await service.call("POST", [], {}, {"login": "alice", "password": "secret"}, None)
+    def _credentials(self, password="secret", login="alice"):
+        return {"login": login, "password": password}
 
-        decoded = jwt_codec.decode(result.body["token"], "test-key")
-        self.assertEqual((decoded["sub"], decoded["tid"]), ("acc-alice", "acme"))
-
-    async def test_typed_login_returns_a_valid_token(self):
-        service = LoginService(self.manager, key="test-key")
-
-        token = await service.login("alice", "secret")
+    async def test_password_login_returns_a_valid_token(self):
+        token = await self.password_login.login("alice", "secret")
 
         decoded = jwt_codec.decode(token, "test-key")
         self.assertEqual((decoded["sub"], decoded["tid"]), ("acc-alice", "acme"))
 
-    async def test_login_service_provides_the_typed_interface(self):
-        from ycappuccino.api.permissions import ILoginService
+    async def test_password_login_provides_the_typed_interface(self):
+        self.assertTrue(issubclass(PasswordLogin, ILoginService))
 
-        self.assertTrue(issubclass(LoginService, ILoginService))
-
-    async def test_login_rejects_a_wrong_password(self):
-        service = LoginService(self.manager, key="test-key")
-
+    async def test_password_login_rejects_a_wrong_password(self):
         with self.assertRaises(InvalidRequest):
-            await service.call("POST", [], {}, {"login": "alice", "password": "wrong"}, None)
+            await self.password_login.login("alice", "wrong")
 
-    async def test_login_rejects_an_unknown_login(self):
-        service = LoginService(self.manager, key="test-key")
-
+    async def test_password_login_rejects_an_unknown_login(self):
         with self.assertRaises(NotFound):
-            await service.call("POST", [], {}, {"login": "bob", "password": "secret"}, None)
+            await self.password_login.login("bob", "secret")
+
+    async def test_post_login_answers_the_token(self):
+        result = await self.endpoint.call("login", "POST", [], {}, self._credentials(), None)
+
+        decoded = jwt_codec.decode(result.body["token"], "test-key")
+        self.assertEqual(decoded["sub"], "acc-alice")
 
     async def test_login_only_supports_post(self):
-        service = LoginService(self.manager, key="test-key")
-
         with self.assertRaises(NotFound):
-            await service.call("GET", [], {}, None, None)
+            await self.endpoint.call("login", "GET", [], {}, None, None)
+
+    async def test_the_rest_services_are_not_the_typed_interface(self):
+        for service in (LoginService, LoginCookieService):
+            with self.subTest(service=service.name):
+                self.assertFalse(issubclass(service, ILoginService))
 
     async def test_the_login_services_are_public(self):
         self.assertFalse(LoginService.secure)
         self.assertFalse(LoginCookieService.secure)
 
-    async def test_the_login_services_declare_a_post_route(self):
+    async def test_the_login_services_declare_a_public_post_method(self):
         for service in (LoginService, LoginCookieService):
             with self.subTest(service=service.name):
-                self.assertEqual(len(service.routes), 1)
-                self.assertIsInstance(service.routes[0], ServiceRoute)
-                self.assertEqual(service.routes[0].method, "POST")
-                self.assertTrue(service.routes[0].summary)
+                methods = list(get_rpc_methods(service).values())
+                self.assertEqual(len(methods), 1)
+                self.assertEqual((methods[0]["method"], methods[0]["path"], methods[0]["secure"]), ("POST", "", False))
+                self.assertTrue(methods[0]["summary"])
 
     async def test_login_cookie_sets_the_header(self):
-        service = LoginCookieService(self.manager, key="test-key")
-
-        result = await service.call("POST", [], {}, {"login": "alice", "password": "secret"}, None)
+        result = await self.endpoint.call("login_cookie", "POST", [], {}, self._credentials(), None)
 
         self.assertIn(f"_ycappuccino={result.body['token']}", result.headers["set-cookie"])
+        self.assertEqual(jwt_codec.decode(result.body["token"], "test-key")["sub"], "acc-alice")
 
 
 if __name__ == "__main__":

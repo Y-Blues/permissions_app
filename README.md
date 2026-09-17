@@ -28,9 +28,7 @@ layers:
 components:
   JwtAuthentication:
     key: une-vraie-cle-secrete-d-au-moins-32-octets
-  LoginService:
-    key: une-vraie-cle-secrete-d-au-moins-32-octets
-  LoginCookieService:
+  PasswordLogin:
     key: une-vraie-cle-secrete-d-au-moins-32-octets
 ```
 
@@ -40,7 +38,7 @@ components:
 permissions.superadmin.password=un-mot-de-passe-initial
 ```
 
-Sans ces deux valeurs, un avertissement est journalisé au démarrage : une clé JWT par défaut partagée entre toutes les installations, et un mot de passe superadmin généré aléatoirement (visible dans le journal). La clé doit être la même pour `JwtAuthentication`, qui vérifie les jetons, et pour les services de connexion, qui les signent ; `pyjwt` avertit si elle fait moins de 32 octets.
+Sans ces deux valeurs, un avertissement est journalisé au démarrage : une clé JWT par défaut partagée entre toutes les installations, et un mot de passe superadmin généré aléatoirement (visible dans le journal). La clé doit être la même pour `JwtAuthentication`, qui vérifie les jetons, et pour `PasswordLogin`, qui les signe ; `pyjwt` avertit si elle fait moins de 32 octets.
 
 ## Modèles
 
@@ -62,7 +60,9 @@ Les droits sont relus à chaque contrôle : le JWT ne porte que `{"sub", "tid", 
 
 ## Connexion
 
-`POST /api/services/login` (`{"login", "password"}` → `{"token"}`) et `POST /api/services/login_cookie` (même chose, plus `Set-Cookie`) sont publics. `POST /api/services/change_password` (`{"login", "password", "new_password"}`) exige, en plus de l'ancien mot de passe, une autorisation (`call:change_password`).
+`PasswordLogin` implémente `ycappuccino.api.permissions.ILoginService` : `login(login, password)` renvoie le jeton. Un composant, local ou dans un navigateur via `ycappuccino.client`, en dépend par cette interface.
+
+Côté HTTP, `LoginService` et `LoginCookieService` s'appuient sur `ILoginService` : `POST /api/services/login` (`{"login", "password"}` → `{"token"}`) et `POST /api/services/login_cookie` (même chose, plus `Set-Cookie`) sont publics. `POST /api/services/change_password` (`{"login", "password", "new_password"}`) et `POST /api/services/create_login` (`{"login", "password"}`) exigent, en plus, une autorisation (`call:change_password`, `call:create_login`). Chacun de ces services répond par une méthode `@rpc_method` (voir le README d'`endpoints_service`).
 
 Le jeton est présenté soit en en-tête `Authorization: Bearer <jeton>`, soit dans le cookie `_ycappuccino`. Il expire au bout de 15 minutes ; il n'y a pas de révocation avant expiration.
 
@@ -153,7 +153,7 @@ docstring de ce service), profil (`account`, CRUD), puis attribution du rôle da
 superadmin.
 
 **Connexion : locale aujourd'hui, fournisseur d'identité externe non construit.**
-`LoginService`/`JwtAuthentication` n'authentifient que des comptes `permissions_app` locaux. Brancher un
+`PasswordLogin`/`JwtAuthentication` n'authentifient que des comptes `permissions_app` locaux. Brancher un
 fournisseur externe (OIDC/SAML/...) est une direction réelle mais **volontairement pas commencée** : côté
 backend il faudrait son propre `IExposedService`/`IAuthentication`, côté frontend un tout autre type
 d'écran (un flux de redirection/device-code ne rentre pas dans le modèle actuel de `Screen`, « un

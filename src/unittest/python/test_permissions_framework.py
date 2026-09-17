@@ -18,7 +18,7 @@ APPLICATION = {
         components:
           JwtAuthentication:
             key: test-key
-          LoginService:
+          PasswordLogin:
             key: test-key
         config:
           shell:
@@ -52,8 +52,11 @@ class TestPermissionsInFramework(unittest.TestCase):
             "JwtAuthentication",
             "IAuthorization",
             "RolePermissionAuthorization",
+            "ILoginService",
+            "PasswordLogin",
             "LoginService",
             "LoginCookieService",
+            "CreateLoginService",
             "ChangePasswordService",
             "OrganizationTree",
             "AccountBootStrap",
@@ -62,11 +65,11 @@ class TestPermissionsInFramework(unittest.TestCase):
                 self.assertIsNotNone(self.framework.context.get_service_reference(specification))
 
     def test_bootstrap_then_login_then_authorized_call(self):
-        login = self._service("LoginService")
+        endpoint = self._service("IServiceEndpoint")
         authorization = self._service("IAuthorization")
 
         result = asyncio.run(
-            login.call("POST", [], {}, {"login": "superadmin", "password": "demo-password"}, None)
+            endpoint.call("login", "POST", [], {}, {"login": "superadmin", "password": "demo-password"}, None)
         )
         self.assertIn("token", result.body)
 
@@ -75,14 +78,12 @@ class TestPermissionsInFramework(unittest.TestCase):
         self.assertTrue(asyncio.run(authorization.is_authorized(subject, "read", "book")))
 
     def test_the_authentication_decodes_the_token_of_the_login_service(self):
-        login = self._service("LoginService")
+        login = self._service("ILoginService")
         authentication = self._service("IAuthentication")
 
-        result = asyncio.run(
-            login.call("POST", [], {}, {"login": "superadmin", "password": "demo-password"}, None)
-        )
+        token = asyncio.run(login.login("superadmin", "demo-password"))
         subject = asyncio.run(
-            authentication.authenticate({"authorization": f"Bearer {result.body['token']}"}, "GET", "/", b"")
+            authentication.authenticate({"authorization": f"Bearer {token}"}, "GET", "/", b"")
         )
 
         self.assertEqual(subject["sub"], "superadmin")
