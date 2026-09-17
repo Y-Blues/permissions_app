@@ -1,27 +1,36 @@
 # the layout of the admin console, rendered the same way in a terminal (FrontendShell) and in a browser
-# (PermissionsWebApp). Transports: login = ILoginService, services = IServiceEndpoint, crud = ICrud.
+# (PermissionsWebApp): a navigation bar with one dropdown per section, the signed-in user and sign-out, above
+# the screens. Transports: login = ILoginService, services = IServiceEndpoint, crud = ICrud.
 title: Administration des permissions
-login: {screen: login, transport: login}
+login: {screen: login, transport: login, user: login}
 menu:
-  - label: Changer mon mot de passe
-    steps:
-      - {screen: change_password, transport: services}
-  - label: Créer une organisation
-    steps:
-      - {screen: organization, transport: crud}
-  - label: Créer un rôle
-    steps:
-      - {screen: role, transport: crud}
-  - label: Créer une permission
-    steps:
-      - {screen: role_permission, transport: crud}
-  - label: Créer un utilisateur
-    # the three records AccountBootStrap creates for the superadmin: credentials (hashed password, never a
-    # raw CRUD write), profile, then the role in a tenant
-    steps:
-      - {screen: create_login, transport: services}
-      - {screen: account, transport: crud, prefill: {login: values.login}}
-      - {screen: role_account, transport: crud, prefill: {account: result._id}}
-  - label: Attribuer un rôle
-    steps:
-      - {screen: role_account, transport: crud}
+  - label: Mon compte
+    entries:
+      - label: Changer mon mot de passe
+        steps:
+          - {screen: change_password, transport: services}
+  - label: Organisations
+    entries:
+      - label: Créer une organisation
+        steps:
+          - {screen: organization, transport: crud}
+  - label: Rôles et permissions
+    entries:
+      - label: Créer un rôle
+        steps:
+          - {screen: role, transport: crud}
+      - label: Créer une permission
+        steps:
+          - {screen: role_permission, transport: crud}
+      - label: Attribuer un rôle
+        steps:
+          - {screen: role_account, transport: crud}
+  - label: Utilisateurs
+    entries:
+      - label: Créer un utilisateur
+        # the three records AccountBootStrap creates for the superadmin: credentials (hashed password, never
+        # a raw CRUD write), profile, then the role in a tenant
+        steps:
+          - {screen: create_login, transport: services}
+          - {screen: account, transport: crud, prefill: {login: values.login}}
+          - {screen: role_account, transport: crud, prefill: {account: result._id}}

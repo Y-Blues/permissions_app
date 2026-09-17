@@ -78,29 +78,33 @@ class TestScreensLoad(unittest.TestCase):
 class TestApplication(unittest.TestCase):
     """the layout both consoles render: menu, chained screens and their transports"""
 
-    def test_the_menu_of_both_consoles(self):
+    def test_the_menu_sections_of_both_consoles(self):
+        application = load_application()
+
         self.assertEqual(
-            [entry.label for entry in load_application().menu],
+            [(group.label, [entry.label for entry in group.entries]) for group in application.menu],
             [
-                "Changer mon mot de passe",
-                "Créer une organisation",
-                "Créer un rôle",
-                "Créer une permission",
-                "Créer un utilisateur",
-                "Attribuer un rôle",
+                ("Mon compte", ["Changer mon mot de passe"]),
+                ("Organisations", ["Créer une organisation"]),
+                ("Rôles et permissions", ["Créer un rôle", "Créer une permission", "Attribuer un rôle"]),
+                ("Utilisateurs", ["Créer un utilisateur"]),
             ],
         )
+        self.assertEqual(application.user_field, "login")
 
     def test_every_step_names_a_screen_and_a_known_transport(self):
         application = load_application()
 
-        for step in [application.login] + [step for entry in application.menu for step in entry.steps]:
+        steps = [step for group in application.menu for entry in group.entries for step in entry.steps]
+        for step in [application.login] + steps:
             with self.subTest(screen=step.screen):
                 self.assertIsNotNone(load_screen(step.screen))
                 self.assertIn(step.transport, ("login", "services", "crud"))
 
     def test_creating_a_user_prefills_the_login_then_the_account_id(self):
-        entry = next(entry for entry in load_application().menu if entry.label == "Créer un utilisateur")
+        entry = next(
+            entry for group in load_application().menu for entry in group.entries if entry.label == "Créer un utilisateur"
+        )
 
         self.assertEqual(
             [(step.screen, step.transport, step.prefill) for step in entry.steps],

@@ -6,11 +6,12 @@ application.yml): every backend interface is a fake. After login, the subject de
 
 import unittest
 
-from textual.widgets import Button, Label
+from textual.widgets import Label, Select
 
 from ycappuccino.api.endpoints_storage import InvalidRequest
 from ycappuccino.permissions import jwt_codec
 from ycappuccino.permissions.frontend_shell.main import FrontendShell
+from ycappuccino.permissions.screens import load_application
 
 _KEY = "test-key"
 _TOKEN = jwt_codec.encode({"sub": "superadmin", "tid": "system"}, _KEY, 3600)
@@ -60,13 +61,19 @@ class TestFrontendShell(unittest.IsolatedAsyncioTestCase):
     async def _submit(self, pilot, **values):
         for name, value in values.items():
             self.app.query_one(f"#field-{name}").value = value
+        self.app.query_one("#action-submit").scroll_visible(animate=False)
+        await pilot.pause()
         await pilot.click("#action-submit")
         await pilot.pause()
 
     async def _choose(self, pilot, label):
-        button = next(button for button in self.app.query(Button) if str(button.label) == label)
-        await pilot.click(f"#{button.id}")
-        await pilot.pause()
+        for index, group in enumerate(load_application().menu):
+            labels = [entry.label for entry in group.entries]
+            if label in labels:
+                self.app.query_one(f"#menu-{index}", Select).value = labels.index(label)
+                await pilot.pause()
+                return
+        raise AssertionError(f"no menu entry {label!r}")
 
     async def _sign_in(self, pilot):
         await pilot.pause()
@@ -74,6 +81,17 @@ class TestFrontendShell(unittest.IsolatedAsyncioTestCase):
 
     def _subject(self):
         return {"sub": "superadmin", "tid": "system"}
+
+    async def test_signing_in_shows_the_sections_the_user_and_the_welcome(self):
+        async with self.app.run_test() as pilot:
+            await self._sign_in(pilot)
+
+            self.assertEqual(
+                [select.prompt for select in self.app.query(Select)],
+                ["Mon compte", "Organisations", "Rôles et permissions", "Utilisateurs"],
+            )
+            self.assertEqual(str(self.app.query_one("#user", Label).content), "superadmin")
+            self.assertEqual(str(self.app.query_one("#message", Label).content), "Bienvenue superadmin.")
 
     async def test_wrong_credentials_stay_on_the_login_screen(self):
         async with self.app.run_test() as pilot:
@@ -127,9 +145,11 @@ class TestFrontendShell(unittest.IsolatedAsyncioTestCase):
     async def test_signing_out_forgets_the_subject(self):
         async with self.app.run_test() as pilot:
             await self._sign_in(pilot)
-            await self._choose(pilot, "Se déconnecter")
+            await pilot.click("#sign-out")
+            await pilot.pause()
             await self._sign_in(pilot)
-            await self._choose(pilot, "Se déconnecter")
+            await pilot.click("#sign-out")
+            await pilot.pause()
 
             self.assertEqual(len(self.app.query("#field-login")), 1)
             self.assertIsNone(self.shell.subject)
