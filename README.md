@@ -144,7 +144,9 @@ tourne dans le process du backend et transmet aux appels suivants le sujet déco
 
 ## Frontend web
 
-`frontend_web/` (`PermissionsWebApp`) : la même console dans un navigateur. Elle tourne dans le `Framework` client de [`client`](../client/README.md) (Pyodide) et ne dépend que
+`frontend_web/` (`PermissionsWebApp`) : la même console dans un navigateur, stylée par sa propre feuille,
+`frontend_web/style.css` (une page de site : barre expresso pleine largeur, contenu sans cadre, clair et
+sombre, mobile), qu'elle passe à la page au démarrage (`IWebPage.add_stylesheet`). Elle tourne dans le `Framework` client de [`client`](../client/README.md) (Pyodide) et ne dépend que
 d'interfaces : `ILoginService`, `IServiceEndpoint` et `ICrud` (les proxies générés), `ISession` (le jeton)
 et `IWebPage` ([`ui_web`](../ui_web/README.md), la page où elle dessine). Elle n'envoie jamais de sujet :
 le backend le déduit du jeton.

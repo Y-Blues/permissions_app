@@ -25,6 +25,10 @@ class FakePage(IWebPage):
         self.dom = FakeDom()
         self.mount = self.dom.create_element("div")
         self._navigator = Navigator(self.dom, self.mount)
+        self.stylesheets = []
+
+    def add_stylesheet(self, css):
+        self.stylesheets.append(css)
 
     async def start(self):
         pass
@@ -104,6 +108,11 @@ class TestPermissionsWebApp(unittest.IsolatedAsyncioTestCase):
 
     async def _sign_in(self):
         await self._submit({"login": "superadmin", "password": "demo"}, "Sign in")
+
+    def test_it_styles_the_page_with_its_own_stylesheet(self):
+        (css,) = self.page.stylesheets
+        for selector in (".yc-nav", ".yc-menu", ".yc-screen", ".yc-field", ".yc-error", ".yc-button", ".yc-status"):
+            self.assertIn(selector, css)
 
     def test_it_starts_on_the_login_screen(self):
         self.assertIn("Sign in", texts(self.page.mount))
