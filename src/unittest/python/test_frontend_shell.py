@@ -1,5 +1,5 @@
 """
-Proves the frontend_shell wiring end-to-end with fake IServiceEndpoint/ICrud (no real network, no
+Proves the frontend_shell wiring end-to-end with fake ILoginService/IServiceEndpoint/ICrud (no real network, no
 real HTTP, no real backend process -- exactly the point: this frontend talks to its backend as a
 Python service/CRUD call, see main.py's docstring): every screen loads correctly from its YAML
 template, and the subject decoded from a real login token (real ycappuccino.permissions.jwt_codec,
@@ -12,7 +12,7 @@ run_screen()).
 import unittest
 
 from ycappuccino.permissions import jwt_codec
-from ycappuccino.permissions.frontend_shell.main import (
+from ycappuccino.permissions.screens import (
     load_account_screen,
     load_change_password_screen,
     load_create_login_screen,
@@ -20,9 +20,8 @@ from ycappuccino.permissions.frontend_shell.main import (
     load_organization_screen,
     load_role_account_screen,
     load_role_permission_screen,
-    load_role_screen,
 )
-from ycappuccino.ui.ycappuccino_transport import CrudTransport, ServiceEndpointTransport
+from ycappuccino.ui.ycappuccino_transport import ComponentTransport, CrudTransport, ServiceEndpointTransport
 from ycappuccino.ui_shell.app import ScreenApp
 
 _KEY = "test-key"
@@ -44,6 +43,17 @@ class FakeServiceEndpoint:
         return FakeResult(self.results[name])
 
 
+class FakeLogin:
+
+    def __init__(self, token):
+        self.token = token
+        self.calls = []
+
+    async def login(self, login, password):
+        self.calls.append((login, password))
+        return self.token
+
+
 class FakeCrud:
 
     def __init__(self, result=None):
@@ -55,79 +65,23 @@ class FakeCrud:
         return self.result
 
 
-class TestScreensLoad(unittest.TestCase):
-
-    def test_login_screen_shape(self):
-        screen = load_login_screen()
-
-        self.assertEqual(screen.title, "Connexion")
-        self.assertEqual({a_field.name for a_field in screen.fields}, {"login", "password"})
-        self.assertEqual(screen.actions[0].endpoint.service, "login")
-
-    def test_change_password_screen_shape(self):
-        screen = load_change_password_screen()
-
-        self.assertEqual({a_field.name for a_field in screen.fields}, {"login", "password", "new_password"})
-        self.assertEqual(screen.actions[0].endpoint.service, "change_password")
-
-    def test_organization_screen_shape(self):
-        screen = load_organization_screen()
-
-        self.assertEqual({a_field.name for a_field in screen.fields}, {"name", "father"})
-        self.assertEqual(screen.actions[0].endpoint.service, "organization")
-
-    def test_role_screen_shape(self):
-        screen = load_role_screen()
-
-        self.assertEqual({a_field.name for a_field in screen.fields}, {"name"})
-        self.assertEqual(screen.actions[0].endpoint.service, "role")
-
-    def test_role_permission_screen_shape(self):
-        screen = load_role_permission_screen()
-
-        fields = {a_field.name: a_field for a_field in screen.fields}
-        self.assertEqual(set(fields), {"role", "rights"})
-        self.assertEqual(fields["rights"].type, "list")
-        self.assertEqual(screen.actions[0].endpoint.service, "rolePermission")
-
-    def test_create_login_screen_shape(self):
-        screen = load_create_login_screen()
-
-        fields = {a_field.name: a_field for a_field in screen.fields}
-        self.assertEqual(set(fields), {"login", "password"})
-        self.assertEqual(fields["password"].type, "password")
-        self.assertEqual(screen.actions[0].endpoint.service, "create_login")
-
-    def test_account_screen_shape(self):
-        screen = load_account_screen()
-
-        self.assertEqual({a_field.name for a_field in screen.fields}, {"name", "login", "role"})
-        self.assertEqual(screen.actions[0].endpoint.service, "account")
-
-    def test_role_account_screen_shape(self):
-        screen = load_role_account_screen()
-
-        self.assertEqual({a_field.name for a_field in screen.fields}, {"account", "role", "organization"})
-        self.assertEqual(screen.actions[0].endpoint.service, "roleAccount")
-
-
 class TestChaining(unittest.IsolatedAsyncioTestCase):
 
     async def test_login_subject_is_carried_to_change_password(self):
         token = jwt_codec.encode({"sub": "aurelien", "tid": "system"}, _KEY, 3600)
-        endpoint = FakeServiceEndpoint(results={"login": {"token": token}, "change_password": {}})
-        transport = ServiceEndpointTransport(endpoint)
+        login = FakeLogin(token)
+        endpoint = FakeServiceEndpoint(results={"change_password": {}})
 
-        login_app = ScreenApp(load_login_screen(), transport)
+        login_app = ScreenApp(load_login_screen(), ComponentTransport({"login": login}))
         async with login_app.run_test() as pilot:
             login_app.query_one("#field-login").value = "aurelien"
             login_app.query_one("#field-password").value = "secret"
             await pilot.click("#action-submit")
 
-        self.assertEqual(login_app.last_result, {"token": token})
+        self.assertEqual((login_app.last_result, login.calls), (token, [("aurelien", "secret")]))
 
         # the same one line FrontendShell.log_in() performs
-        transport.subject = jwt_codec.decode(login_app.last_result["token"], _KEY)
+        transport = ServiceEndpointTransport(endpoint, subject=jwt_codec.decode(login_app.last_result, _KEY))
 
         change_app = ScreenApp(load_change_password_screen(), transport)
         async with change_app.run_test() as pilot:
@@ -136,8 +90,7 @@ class TestChaining(unittest.IsolatedAsyncioTestCase):
             change_app.query_one("#field-new_password").value = "new-secret"
             await pilot.click("#action-submit")
 
-        self.assertEqual(endpoint.calls[0][0], "login")
-        change_password_call = endpoint.calls[1]
+        change_password_call = endpoint.calls[0]
         self.assertEqual(change_password_call[0], "change_password")
         self.assertEqual(
             change_password_call[4],

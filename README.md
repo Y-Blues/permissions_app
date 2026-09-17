@@ -120,22 +120,16 @@ class TestAuthorization(unittest.IsolatedAsyncioTestCase):
 
 `frontend_shell/` (`FrontendShell`, `ycappuccino.permissions.frontend_shell.main`) : console d'admin en
 terminal — connexion, changement de mot de passe, et gestion des organisations (tenants), rôles,
-permissions et utilisateurs — chaque écran chargé depuis un template YAML (`frontend_shell/screens/`,
-jamais construit à la main), rendu par `ycappuccino-ui-shell`. Voir le README de [ui](../ui/README.md)
+permissions et utilisateurs — chaque écran chargé depuis un template YAML (`ycappuccino.permissions.screens`, partagé avec la
+console web, jamais construit à la main), rendu par `ycappuccino-ui-shell`. Voir le README de [ui](../ui/README.md)
 pour le modèle d'écran et [ui_shell](../ui_shell/README.md) pour le rendu.
 
 L'essayer : `example/console/run.sh` (login `superadmin` / `demo`, stockage en mémoire).
 
-**Choix explicite : la communication entre ce frontend et le backend `permissions_app` est un appel de
-service/CRUD Python (`ServiceEndpointTransport`/`CrudTransport` de `ycappuccino.ui.ycappuccino_transport`,
-un vrai `IServiceEndpoint`/`ICrud` injecté), jamais du HTTP.** `FrontendShell` ne s'installe donc que dans le **même** process/`Framework`
-que le backend — le sujet décodé du jeton de connexion (`jwt_codec.decode`) est transmis directement aux
-appels suivants, sans en-tête `Authorization` puisqu'il n'y a aucune requête HTTP. Faire tourner ce
-frontend comme un vrai client séparé (un autre process, une autre machine) demande le dispatch typé et
-authentifié entre pairs que `remote` est censé fournir — conçu mais **pas encore implémenté**
-(`remote/docs/superpowers/specs/2026-09-16-transparent-rpc-design.md`, plan à
-`remote/docs/superpowers/plans/2026-09-16-transparent-rpc.md`) : tant que ce n'est pas prêt, ce frontend
-reste un outil mono-process, voir la docstring de `main.py` pour le détail.
+`FrontendShell` ne connaît que des interfaces : `ILoginService` (écran de connexion, par
+`ComponentTransport`), `IServiceEndpoint` (`change_password`, `create_login`) et `ICrud` (le reste). Il
+tourne dans le process du backend et transmet aux appels suivants le sujet décodé du jeton
+(`jwt_codec.decode`), d'où son paramètre `key`.
 
 **Modèle de tenancy** (voir « Multi-tenant » plus haut) : `Role`/`RolePermission` ne sont **pas** eux-mêmes
 liés à un tenant — leur définition est la même partout. C'est `RoleAccount` (écran « Attribuer un rôle »,

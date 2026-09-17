@@ -1,8 +1,7 @@
 """
 FrontendShell: terminal admin console for permissions_app -- login, tenants, roles, permissions,
-users. Screens are YAML templates (screens/*.yml). Talks to its own backend via a Python service/
-CRUD call (never HTTP, see ServiceEndpointTransport/CrudTransport) -- same-process only, until
-ycappuccino-remote's peer dispatch design lands (remote/docs/superpowers/plans/2026-09-16-transparent-rpc.md).
+users. Screens are the shared YAML templates of ycappuccino.permissions.screens. Talks to its backend
+through its interfaces only (ILoginService, IServiceEndpoint, ICrud), local or proxied.
 
 create_user() chains 3 screens: create_login (hashed password), account (profile), role_account
 (tenant grant) -- same records AccountBootStrap creates by hand for the superadmin. A tenant-wide
@@ -11,59 +10,32 @@ role/permission (e.g. admin) is granted at the root organization ("system"), not
 Login is local-only; an external identity provider is a future direction, not built here.
 """
 
-from pathlib import Path
-
 from ycappuccino.api.core_base import YCappuccinoComponent
 from ycappuccino.api.endpoints_service import IServiceEndpoint
 from ycappuccino.api.endpoints_storage import ICrud
+from ycappuccino.api.permissions import ILoginService
 from ycappuccino.permissions import jwt_codec
-from ycappuccino.ui.ycappuccino_transport import CrudTransport, ServiceEndpointTransport
-from ycappuccino.ui.loader import load_screen_yaml
+from ycappuccino.permissions.screens import (
+    load_account_screen,
+    load_change_password_screen,
+    load_create_login_screen,
+    load_login_screen,
+    load_organization_screen,
+    load_role_account_screen,
+    load_role_permission_screen,
+    load_role_screen,
+)
 from ycappuccino.ui.model import Screen
+from ycappuccino.ui.ycappuccino_transport import ComponentTransport, CrudTransport, ServiceEndpointTransport
 from ycappuccino.ui_shell.app import ScreenApp
-
-_SCREENS_DIR = Path(__file__).parent / "screens"
-
-
-def _load(name: str) -> Screen:
-    return load_screen_yaml((_SCREENS_DIR / f"{name}.yml").read_text())
-
-
-def load_login_screen() -> Screen:
-    return _load("login")
-
-
-def load_change_password_screen() -> Screen:
-    return _load("change_password")
-
-
-def load_organization_screen() -> Screen:
-    return _load("organization")
-
-
-def load_role_screen() -> Screen:
-    return _load("role")
-
-
-def load_role_permission_screen() -> Screen:
-    return _load("role_permission")
-
-
-def load_create_login_screen() -> Screen:
-    return _load("create_login")
-
-
-def load_account_screen() -> Screen:
-    return _load("account")
-
-
-def load_role_account_screen() -> Screen:
-    return _load("role_account")
 
 
 class FrontendShell(YCappuccinoComponent):
 
-    def __init__(self, endpoint: IServiceEndpoint, crud: ICrud, key: str = jwt_codec.DEFAULT_KEY) -> None:
+    def __init__(
+        self, login: ILoginService, endpoint: IServiceEndpoint, crud: ICrud, key: str = jwt_codec.DEFAULT_KEY
+    ) -> None:
+        self._login = login
         self._endpoint = endpoint
         self._crud = crud
         self._key = key
@@ -76,12 +48,11 @@ class FrontendShell(YCappuccinoComponent):
         pass
 
     def log_in(self) -> bool:
-        transport = ServiceEndpointTransport(self._endpoint)
-        login_app = ScreenApp(load_login_screen(), transport)
+        login_app = ScreenApp(load_login_screen(), ComponentTransport({"login": self._login}))
         login_app.run()
         if login_app.last_result is None:
             return False
-        self._subject = jwt_codec.decode(login_app.last_result["token"], self._key)
+        self._subject = jwt_codec.decode(login_app.last_result, self._key)
         return True
 
     def run(self) -> None:
