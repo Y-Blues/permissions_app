@@ -12,6 +12,8 @@ dependencies = [
     "pyjwt>=2.8",
     "ycappuccino-ui",
     "ycappuccino-ui-shell",
+    "ycappuccino-ui-web",
+    "ycappuccino-client",
 ]
 
 [build-system]
@@ -30,3 +32,5 @@ ycappuccino-endpoints-storage = { path = "../endpoints_storage", editable = true
 ycappuccino-endpoints-service = { path = "../endpoints_service", editable = true }
 ycappuccino-ui = { path = "../ui", editable = true }
 ycappuccino-ui-shell = { path = "../ui_shell", editable = true }
+ycappuccino-ui-web = { path = "../ui_web", editable = true }
+ycappuccino-client = { path = "../client", editable = true }

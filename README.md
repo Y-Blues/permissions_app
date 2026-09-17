@@ -131,6 +131,41 @@ L'essayer : `example/console/run.sh` (login `superadmin` / `demo`, stockage en m
 tourne dans le process du backend et transmet aux appels suivants le sujet décodé du jeton
 (`jwt_codec.decode`), d'où son paramètre `key`.
 
+## Frontend web
+
+`frontend_web/` (`PermissionsWebApp`) : la même console dans un navigateur, sur les mêmes écrans, avec la
+même navigation (connexion, menu, formulaires, création d'utilisateur en trois écrans, déconnexion). Elle
+tourne dans le `Framework` client de [`client`](../client/README.md) (Pyodide) et ne dépend que
+d'interfaces : `ILoginService`, `IServiceEndpoint` et `ICrud` (les proxies générés), `ISession` (le jeton)
+et `IWebPage` ([`ui_web`](../ui_web/README.md), la page où elle dessine). Elle n'envoie jamais de sujet :
+le backend le déduit du jeton.
+
+Chaque étape de la création d'un utilisateur est pré-remplie avec ce que la précédente a créé :
+l'identifiant, puis l'id que le backend a donné au compte (celui qu'attend l'attribution du rôle).
+
+**Déployer.** Le backend charge, en plus de ses modules habituels, `ycappuccino.remote.dispatch` et
+`ycappuccino.remote.capabilities`. La page générique `client/static/index.html` est servie sur la même
+origine que son `/api`, à côté des wheels et de `example/web/ycappuccino.json` :
+
+```json
+{"name": "permissions-admin",
+ "wheels": ["wheels/ycappuccino_api-0.1.0-py3-none-any.whl", "...", "wheels/ycappuccino_permissions-0.1.0-py3-none-any.whl"],
+ "bundles": ["ycappuccino.ui_web.page", "ycappuccino.permissions.frontend_web"],
+ "components": {"PyodidePage": {"mount_selector": "#app"}}}
+```
+
+Les wheels se construisent avec `uv build --wheel` dans `api`, `core`, `client`, `ui`, `ui_web` et
+`permissions_app`.
+
+**Vérifié le 2026-09-17** dans Chromium (Playwright, Pyodide 0.28.3), devant un vrai backend : mauvais mot
+de passe affiché sur l'écran, connexion, création d'une organisation (relue ensuite par l'API REST),
+création d'un utilisateur en trois écrans puis connexion de cet utilisateur, déconnexion. La page et
+l'`/api` y étaient servis par un petit serveur de développement (fichiers statiques et proxy vers le
+backend) ; leur service par `hosts` n'est pas vérifié.
+
+La console terminal a encore le défaut que la console web corrige : son écran d'attribution demande l'id
+du compte sans le pré-remplir.
+
 **Modèle de tenancy** (voir « Multi-tenant » plus haut) : `Role`/`RolePermission` ne sont **pas** eux-mêmes
 liés à un tenant — leur définition est la même partout. C'est `RoleAccount` (écran « Attribuer un rôle »,
 `FrontendShell.grant_role()`) qui scope réellement une attribution à une organisation. Un rôle « global »
