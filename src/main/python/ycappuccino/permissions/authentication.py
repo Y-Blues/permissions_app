@@ -25,11 +25,15 @@ class JwtAuthentication(IAuthentication):
     async def stop(self) -> None:
         pass
 
-    async def authenticate(self, headers: dict) -> dict | None:
+    async def authenticate(self, headers: dict, method: str, path: str, body: bytes) -> dict | None:
         token = _token_from_headers(headers)
         if token is None:
             return None
-        return jwt_codec.decode(token, self._key)
+        subject = jwt_codec.decode(token, self._key)
+        if subject is not None:
+            # peer trust is only ever granted by a request signature, never by a user token
+            subject.pop("peer", None)
+        return subject
 
 
 def _token_from_headers(headers: dict) -> str | None:

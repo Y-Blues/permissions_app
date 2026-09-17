@@ -82,7 +82,7 @@ class TestPermissionsInFramework(unittest.TestCase):
             login.call("POST", [], {}, {"login": "superadmin", "password": "demo-password"}, None)
         )
         subject = asyncio.run(
-            authentication.authenticate({"authorization": f"Bearer {result.body['token']}"})
+            authentication.authenticate({"authorization": f"Bearer {result.body['token']}"}, "GET", "/", b"")
         )
 
         self.assertEqual(subject["sub"], "superadmin")
