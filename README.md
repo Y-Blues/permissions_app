@@ -144,9 +144,10 @@ tourne dans le process du backend et transmet aux appels suivants le sujet déco
 
 ## Frontend web
 
-`frontend_web/` (`PermissionsWebApp`) : la même console dans un navigateur, stylée par sa propre feuille,
-`frontend_web/style.css` (une page de site : barre expresso pleine largeur, contenu sans cadre, clair et
-sombre, mobile), qu'elle passe à la page au démarrage (`IWebPage.add_stylesheet`). Elle tourne dans le `Framework` client de [`client`](../client/README.md) (Pyodide) et ne dépend que
+`frontend_web/` (`PermissionsWebApp`) : la même console dans un navigateur. Son thème ne fait pas partie du
+paquet : c'est la configuration du déploiement, `example/web/style.css` (une page de site : barre expresso
+pleine largeur, contenu sans cadre, clair et sombre, mobile), liée par `ycappuccino.json`
+(`components: PyodidePage: stylesheets`). Elle tourne dans le `Framework` client de [`client`](../client/README.md) (Pyodide) et ne dépend que
 d'interfaces : `ILoginService`, `IServiceEndpoint` et `ICrud` (les proxies générés), `ISession` (le jeton)
 et `IWebPage` ([`ui_web`](../ui_web/README.md), la page où elle dessine). Elle n'envoie jamais de sujet :
 le backend le déduit du jeton.
@@ -164,7 +165,7 @@ origine que son `/api`, à côté des wheels et de `example/web/ycappuccino.json
 {"name": "permissions-admin",
  "wheels": ["wheels/ycappuccino_api-0.1.0-py3-none-any.whl", "...", "wheels/ycappuccino_permissions-0.1.0-py3-none-any.whl"],
  "bundles": ["ycappuccino.ui_web.page", "ycappuccino.permissions.frontend_web"],
- "components": {"PyodidePage": {"mount_selector": "#app"}}}
+ "components": {"PyodidePage": {"mount_selector": "#app", "stylesheets": "style.css"}}}
 ```
 
 Les wheels se construisent avec `uv build --wheel` dans `api`, `core`, `client`, `ui`, `ui_web` et

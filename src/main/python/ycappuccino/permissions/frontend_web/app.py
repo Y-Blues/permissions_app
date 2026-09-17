@@ -5,7 +5,6 @@ interfaces only: ILoginService, IServiceEndpoint and ICrud (the generated proxie
 browser), ISession for the token, IWebPage to draw. No subject is sent: the backend derives it from the token.
 """
 
-from pathlib import Path
 from typing import Any
 
 from ycappuccino.api.core_base import YCappuccinoComponent
@@ -17,10 +16,6 @@ from ycappuccino.permissions.screens import load_application, load_screen
 from ycappuccino.ui.ycappuccino_transport import ComponentTransport, CrudTransport, ServiceEndpointTransport
 from ycappuccino.ui_web.application import WebApplication
 from ycappuccino.ui_web.page import IWebPage
-
-# the console's theme, on the yc-* classes ui_web puts on its elements
-STYLESHEET = Path(__file__).parent / "style.css"
-
 
 class PermissionsWebApp(YCappuccinoComponent):
 
@@ -36,7 +31,6 @@ class PermissionsWebApp(YCappuccinoComponent):
         }
 
     async def start(self) -> None:
-        self._page.add_stylesheet(STYLESHEET.read_text(encoding="utf-8"))
         WebApplication(
             load_application(), self._page.navigator(), load_screen, self._transports, self._signed_in, self._signed_out
         ).start()

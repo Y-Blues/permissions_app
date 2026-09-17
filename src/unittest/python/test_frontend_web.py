@@ -3,7 +3,9 @@ The browser admin console, driven through a real in-memory DOM (ycappuccino.ui_w
 every backend interface is a fake, as the generated proxies would be in a browser.
 """
 
+import json
 import unittest
+from pathlib import Path
 
 from ycappuccino.api.endpoints_storage import InvalidRequest
 from ycappuccino.permissions.frontend_web.app import PermissionsWebApp
@@ -25,10 +27,7 @@ class FakePage(IWebPage):
         self.dom = FakeDom()
         self.mount = self.dom.create_element("div")
         self._navigator = Navigator(self.dom, self.mount)
-        self.stylesheets = []
 
-    def add_stylesheet(self, css):
-        self.stylesheets.append(css)
 
     async def start(self):
         pass
@@ -109,11 +108,6 @@ class TestPermissionsWebApp(unittest.IsolatedAsyncioTestCase):
     async def _sign_in(self):
         await self._submit({"login": "superadmin", "password": "demo"}, "Sign in")
 
-    def test_it_styles_the_page_with_its_own_stylesheet(self):
-        (css,) = self.page.stylesheets
-        for selector in (".yc-nav", ".yc-menu", ".yc-screen", ".yc-field", ".yc-error", ".yc-button", ".yc-status"):
-            self.assertIn(selector, css)
-
     def test_it_starts_on_the_login_screen(self):
         self.assertIn("Sign in", texts(self.page.mount))
 
@@ -184,6 +178,28 @@ class TestPermissionsWebApp(unittest.IsolatedAsyncioTestCase):
 
         self.assertIsNone(self.session.token)
         self.assertIsNotNone(find_button(self.page.mount, "Sign in"))
+
+
+
+class TestWebExampleConfiguration(unittest.TestCase):
+    """the theme is the deployment's configuration (example/web), not code of permissions_app"""
+
+    EXAMPLE = Path(__file__).resolve().parents[3] / "example" / "web"
+
+    def test_the_example_links_its_stylesheet_through_the_page_configuration(self):
+        configuration = json.loads((self.EXAMPLE / "ycappuccino.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(configuration["components"]["PyodidePage"]["stylesheets"], "style.css")
+        self.assertIn("cp style.css site/style.css", (self.EXAMPLE / "run.sh").read_text(encoding="utf-8"))
+        css = (self.EXAMPLE / "style.css").read_text(encoding="utf-8")
+        for selector in (".yc-nav", ".yc-menu", ".yc-screen", ".yc-field", ".yc-error", ".yc-button", ".yc-status"):
+            self.assertIn(selector, css)
+
+    def test_the_package_ships_no_theme(self):
+        import ycappuccino.permissions
+
+        package = Path(ycappuccino.permissions.__file__).parent
+        self.assertEqual(list(package.rglob("*.css")), [])
 
 
 if __name__ == "__main__":

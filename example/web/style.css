@@ -1,5 +1,6 @@
-/* theme of the permissions admin console: a site -- espresso bar with a crema band, plain pages below.
-   It styles the yc-* classes ycappuccino-ui-web puts on its elements. */
+/* theme of this deployment of the permissions admin console, linked by ycappuccino.json (PyodidePage
+   stylesheets): a site -- espresso bar with a crema band, plain pages below. It styles the yc-* classes
+   ycappuccino-ui-web puts on its elements. */
 :root {
   --yc-espresso: #2a1b12;
   --yc-crema: #c9a27e;
