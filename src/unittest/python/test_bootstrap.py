@@ -36,6 +36,18 @@ class TestAccountBootStrap(unittest.IsolatedAsyncioTestCase):
         organization_id = await passwords.organization_of(self.manager, account_id)
         self.assertEqual(organization_id, "system")
 
+    async def test_the_superadmin_login_can_be_configured(self):
+        await self._bootstrap(
+            {"permissions.superadmin.login": "admin", "permissions.superadmin.password": "admin"}
+        ).start()
+
+        account_id = await passwords.check_login(self.manager, "admin", "admin")
+        authorization = RolePermissionAuthorization(self.manager)
+
+        self.assertEqual(await passwords.organization_of(self.manager, account_id), "system")
+        self.assertTrue(await authorization.is_authorized({"sub": account_id, "tid": "system"}, "write", "role"))
+        self.assertIsNone(await self.manager.get_one("login", "superadmin", subject=None))
+
     async def test_a_configured_password_is_not_logged(self):
         bootstrap = self._bootstrap({"permissions.superadmin.password": "demo"})
 

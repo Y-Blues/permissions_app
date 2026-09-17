@@ -35,6 +35,8 @@ components:
 `conf/config.properties` :
 
 ```
+# optionnel, « superadmin » par défaut
+permissions.superadmin.login=superadmin
 permissions.superadmin.password=un-mot-de-passe-initial
 ```
 
@@ -133,7 +135,7 @@ Les étapes nomment l'un des trois transports que chaque console fournit : `logi
 
 `frontend_shell/` (`FrontendShell`) : la console en terminal, une App textual (`run_menu()`).
 
-L'essayer : `example/console/run.sh` (login `superadmin` / `demo`, stockage en mémoire).
+L'essayer : `example/console/run.sh` (login `admin` / `admin`, stockage en mémoire).
 
 `FrontendShell` ne connaît que des interfaces : `ILoginService` (écran de connexion, par
 `ComponentTransport`), `IServiceEndpoint` (`change_password`, `create_login`) et `ICrud` (le reste). Il
@@ -147,7 +149,7 @@ d'interfaces : `ILoginService`, `IServiceEndpoint` et `ICrud` (les proxies gén�
 et `IWebPage` ([`ui_web`](../ui_web/README.md), la page où elle dessine). Elle n'envoie jamais de sujet :
 le backend le déduit du jeton.
 
-L'essayer : `example/web/run.sh`, puis ouvrir http://localhost:8180 (login `superadmin` / `demo`, stockage en
+L'essayer : `example/web/run.sh`, puis ouvrir http://localhost:8180 (login `admin` / `admin`, stockage en
 mémoire). Le script construit les wheels dans `example/web/site/`, y copie la page générique de `client` et
 `ycappuccino.json`, puis démarre un seul process : le backend, qui sert aussi `site/` par `hosts` (composant
 `WebSite`, `example/web/webhost/site.py`), donc la page et l'`/api` partagent la même origine.

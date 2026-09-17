@@ -1,5 +1,8 @@
 """
 AccountBootStrap: idempotently creates the system organization and the superadmin account.
+
+Its login is permissions.superadmin.login ("superadmin" by default), its password
+permissions.superadmin.password (generated and logged when unset), both read from conf/config.properties.
 """
 
 import secrets
@@ -32,7 +35,8 @@ class AccountBootStrap(YCappuccinoComponent):
         pass
 
     async def start(self) -> None:
-        if await self._manager.get_one("login", SUPERADMIN, subject=None) is not None:
+        name = self._config.get("permissions.superadmin.login", SUPERADMIN)
+        if await self._manager.get_one("login", name, subject=None) is not None:
             return  # already initialized
 
         password = self._config.get("permissions.superadmin.password", None)
@@ -51,22 +55,22 @@ class AccountBootStrap(YCappuccinoComponent):
         await self._manager.up_sert_model(role, subject=None)
 
         login = Login()
-        login.id(SUPERADMIN)
-        login.login(SUPERADMIN)
+        login.id(name)
+        login.login(name)
         login.password(password)
         await self._manager.up_sert_model(login, subject=None)
 
         account = Account()
-        account.id(SUPERADMIN)
-        account.name(SUPERADMIN)
-        account.login(SUPERADMIN)
+        account.id(name)
+        account.name(name)
+        account.login(name)
         account.role(SUPERADMIN)
         await self._manager.up_sert_model(account, subject=None)
 
         role_account = RoleAccount()
-        role_account.id(SUPERADMIN)
+        role_account.id(name)
         role_account.role(SUPERADMIN)
-        role_account.account(SUPERADMIN)
+        role_account.account(name)
         role_account.organization(SYSTEM)
         await self._manager.up_sert_model(role_account, subject=None)
 

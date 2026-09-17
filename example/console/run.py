@@ -1,4 +1,4 @@
-"""Boots permissions_app and hands control to FrontendShell.run_menu(). Login: superadmin / demo."""
+"""Boots permissions_app and hands control to FrontendShell.run_menu(). Login: admin / admin."""
 
 import os
 

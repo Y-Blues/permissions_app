@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Launches the permissions_app console (login as superadmin/demo, then manage tenants, roles,
+# Launches the permissions_app console (login as admin / admin, then manage tenants, roles,
 # permissions and users). Run from anywhere -- it cd's into this script's own directory first.
 set -euo pipefail
 
