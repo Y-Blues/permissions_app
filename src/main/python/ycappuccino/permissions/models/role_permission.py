@@ -14,15 +14,15 @@ from ycappuccino.core.decorator_app import App
 @ItemReference(from_name="rolePermission", field="role", item="role")
 class RolePermission(Model):
 
-    def __init__(self, a_dict=None):
+    def __init__(self, a_dict: dict | None = None) -> None:
         super().__init__(a_dict)
         self._role = None
         self._rights = None
 
     @Reference(name="role")
-    def role(self, a_value):
+    def role(self, a_value: str) -> None:
         self._role = a_value
 
     @Property(name="rights")
-    def rights(self, a_value):
+    def rights(self, a_value: list[str]) -> None:
         self._rights = a_value

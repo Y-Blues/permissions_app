@@ -5,6 +5,7 @@ Password hashing and the shared login check used by the login services.
 import hashlib
 
 from ycappuccino.api.endpoints_storage import InvalidRequest, NotFound
+from ycappuccino.api.storage import IManager
 
 # password is private=True on Login: without this, Manager strips it from reads (see storage/README.md)
 _READ_PASSWORD = {"content": "privateField"}
@@ -21,7 +22,7 @@ def _hash_md5_legacy(password: str, salt: str) -> str:
     return hashlib.md5(f"{salt}{password}".encode()).hexdigest()
 
 
-async def check_login(manager, login_id: str, password: str) -> str:
+async def check_login(manager: IManager, login_id: str, password: str) -> str:
     """the account id matching login_id/password, or raises NotFound / InvalidRequest"""
     login = await manager.get_one("login", login_id, _READ_PASSWORD, subject=None)
     if login is None:
@@ -47,7 +48,7 @@ async def check_login(manager, login_id: str, password: str) -> str:
     return accounts[0].get_storage_model()["_id"]
 
 
-async def organization_of(manager, account_id: str) -> str:
+async def organization_of(manager: IManager, account_id: str) -> str:
     """the organization of the first RoleAccount of this account (one active role, a known simplification)"""
     role_accounts = await manager.get_many(
         "roleAccount", {"filter": {"account.ref": account_id}}, subject=None

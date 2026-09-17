@@ -16,25 +16,25 @@ from ycappuccino.permissions import passwords
 )
 class Login(Model):
 
-    def __init__(self, a_dict=None):
+    def __init__(self, a_dict: dict | None = None) -> None:
         super().__init__(a_dict)
         self._login = None
         self._salt = None
         self._password = None
 
     @Property(name="login")
-    def login(self, a_value):
+    def login(self, a_value: str) -> None:
         self._login = a_value
 
     @Property(name="salt")
-    def salt(self, a_value):
+    def salt(self, a_value: str) -> None:
         self._salt = a_value
 
     @Property(name="password", private=True)
-    def _stored_password(self, a_value):
+    def _stored_password(self, a_value: str) -> None:
         self._password = a_value
 
-    def password(self, cleartext):
+    def password(self, cleartext: str) -> None:
         """sets a fresh salt and stores its scrypt hash - do not call _stored_password directly"""
         self.salt(secrets.token_hex(32))
         self._stored_password(passwords.hash_scrypt(cleartext, self._salt))

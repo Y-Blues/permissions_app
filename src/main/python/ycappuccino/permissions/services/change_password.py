@@ -2,6 +2,8 @@
 ChangePasswordService: verifies the old password, then stores a fresh scrypt hash.
 """
 
+from typing import Any
+
 from ycappuccino.api.endpoints_service import IExposedService, ServiceResult, ServiceRoute
 from ycappuccino.api.endpoints_storage import NotFound
 from ycappuccino.api.storage import IManager
@@ -15,16 +17,18 @@ class ChangePasswordService(IExposedService):
         ServiceRoute(method="POST", summary="replace the password of a login"),
     )
 
-    def __init__(self, manager: IManager):
+    def __init__(self, manager: IManager) -> None:
         self._manager = manager
 
-    async def start(self):
+    async def start(self) -> None:
         pass
 
-    async def stop(self):
+    async def stop(self) -> None:
         pass
 
-    async def call(self, method, extra_path, params, body, subject):
+    async def call(
+        self, method: str, extra_path: list, params: dict, body: Any, subject: dict | None
+    ) -> ServiceResult:
         if method != "POST":
             raise NotFound("not found")
         await passwords.check_login(self._manager, body["login"], body["password"])

@@ -25,13 +25,13 @@ class AccountBootStrap(YCappuccinoComponent):
         manager: IManager,
         config: IConfiguration,
         logger: YCappuccinoType(IActivityLogger, "(name=main)"),
-    ):
+    ) -> None:
         self._manager, self._config, self._logger = manager, config, logger
 
-    async def stop(self):
+    async def stop(self) -> None:
         pass
 
-    async def start(self):
+    async def start(self) -> None:
         if await self._manager.get_one("login", SUPERADMIN, subject=None) is not None:
             return  # already initialized
 

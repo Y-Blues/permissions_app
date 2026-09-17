@@ -1,6 +1,8 @@
 """Creates a Login with a hashed password. Not a CRUD create: a raw write would store the
 password in cleartext (private=True only hides it from reads, not writes)."""
 
+from typing import Any
+
 from ycappuccino.api.endpoints_service import IExposedService, ServiceResult, ServiceRoute
 from ycappuccino.api.endpoints_storage import InvalidRequest, NotFound
 from ycappuccino.api.storage import IManager
@@ -12,16 +14,18 @@ class CreateLoginService(IExposedService):
     secure = True
     routes = (ServiceRoute(method="POST", summary="create a new login with a hashed password"),)
 
-    def __init__(self, manager: IManager):
+    def __init__(self, manager: IManager) -> None:
         self._manager = manager
 
-    async def start(self):
+    async def start(self) -> None:
         pass
 
-    async def stop(self):
+    async def stop(self) -> None:
         pass
 
-    async def call(self, method, extra_path, params, body, subject):
+    async def call(
+        self, method: str, extra_path: list, params: dict, body: Any, subject: dict | None
+    ) -> ServiceResult:
         if method != "POST":
             raise NotFound("not found")
         login_id = body["login"]

@@ -3,7 +3,6 @@ Stateless JWT encode/decode, shared by JwtAuthentication and the login services.
 """
 
 import time
-from typing import Optional
 
 import jwt
 
@@ -18,7 +17,7 @@ def encode(payload: dict, key: str, timeout_seconds: int) -> str:
     )
 
 
-def decode(token: str, key: str) -> Optional[dict]:
+def decode(token: str, key: str) -> dict | None:
     try:
         return jwt.decode(token, key, algorithms=["HS256"])
     except jwt.PyJWTError:

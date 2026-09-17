@@ -16,20 +16,20 @@ from ycappuccino.core.decorator_app import App
 @ItemReference(from_name="roleAccount", field="organization", item="organization")
 class RoleAccount(Model):
 
-    def __init__(self, a_dict=None):
+    def __init__(self, a_dict: dict | None = None) -> None:
         super().__init__(a_dict)
         self._role = None
         self._account = None
         self._organization = None
 
     @Reference(name="role")
-    def role(self, a_value):
+    def role(self, a_value: str) -> None:
         self._role = a_value
 
     @Reference(name="account")
-    def account(self, a_value):
+    def account(self, a_value: str) -> None:
         self._account = a_value
 
     @Reference(name="organization")
-    def organization(self, a_value):
+    def organization(self, a_value: str) -> None:
         self._organization = a_value

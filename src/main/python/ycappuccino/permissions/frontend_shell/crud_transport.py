@@ -1,14 +1,14 @@
 """Transport calling a local ICrud directly (no HTTP). `service` is an item_id, `path` is empty
 or a single document id."""
 
-from typing import Any, Optional
+from typing import Any
 
 from ycappuccino.api.endpoints_storage import ICrud
 
 
 class CrudTransport:
 
-    def __init__(self, crud: ICrud, subject: Optional[dict] = None):
+    def __init__(self, crud: ICrud, subject: dict | None = None) -> None:
         self._crud = crud
         self.subject = subject
 

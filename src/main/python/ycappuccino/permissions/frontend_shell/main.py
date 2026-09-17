@@ -20,59 +20,60 @@ from ycappuccino.permissions import jwt_codec
 from ycappuccino.permissions.frontend_shell.crud_transport import CrudTransport
 from ycappuccino.permissions.frontend_shell.service_endpoint_transport import ServiceEndpointTransport
 from ycappuccino.ui.loader import load_screen_yaml
+from ycappuccino.ui.model import Screen
 from ycappuccino.ui_shell.app import ScreenApp
 
 _SCREENS_DIR = Path(__file__).parent / "screens"
 
 
-def _load(name: str):
+def _load(name: str) -> Screen:
     return load_screen_yaml((_SCREENS_DIR / f"{name}.yml").read_text())
 
 
-def load_login_screen():
+def load_login_screen() -> Screen:
     return _load("login")
 
 
-def load_change_password_screen():
+def load_change_password_screen() -> Screen:
     return _load("change_password")
 
 
-def load_organization_screen():
+def load_organization_screen() -> Screen:
     return _load("organization")
 
 
-def load_role_screen():
+def load_role_screen() -> Screen:
     return _load("role")
 
 
-def load_role_permission_screen():
+def load_role_permission_screen() -> Screen:
     return _load("role_permission")
 
 
-def load_create_login_screen():
+def load_create_login_screen() -> Screen:
     return _load("create_login")
 
 
-def load_account_screen():
+def load_account_screen() -> Screen:
     return _load("account")
 
 
-def load_role_account_screen():
+def load_role_account_screen() -> Screen:
     return _load("role_account")
 
 
 class FrontendShell(YCappuccinoComponent):
 
-    def __init__(self, endpoint: IServiceEndpoint, crud: ICrud, key: str = jwt_codec.DEFAULT_KEY):
+    def __init__(self, endpoint: IServiceEndpoint, crud: ICrud, key: str = jwt_codec.DEFAULT_KEY) -> None:
         self._endpoint = endpoint
         self._crud = crud
         self._key = key
-        self._subject = None  # set by log_in(), reused by every screen run after that
+        self._subject: dict | None = None  # set by log_in(), reused by every screen run after that
 
-    async def start(self):
+    async def start(self) -> None:
         pass
 
-    async def stop(self):
+    async def stop(self) -> None:
         pass
 
     def log_in(self) -> bool:
@@ -115,7 +116,7 @@ class FrontendShell(YCappuccinoComponent):
 
         self._run_crud_screen(load_role_account_screen())
 
-    def _run_crud_screen(self, screen) -> ScreenApp:
+    def _run_crud_screen(self, screen: Screen) -> ScreenApp:
         transport = CrudTransport(self._crud, subject=self._subject)
         app = ScreenApp(screen, transport)
         app.run()

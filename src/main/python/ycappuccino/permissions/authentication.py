@@ -3,7 +3,6 @@ JwtAuthentication: stateless JWT verification for the IAuthentication port (http
 """
 
 import logging
-from typing import Optional
 
 from ycappuccino.api.http_server import IAuthentication
 from ycappuccino.permissions import jwt_codec
@@ -16,24 +15,24 @@ _COOKIE = "_ycappuccino"
 
 class JwtAuthentication(IAuthentication):
 
-    def __init__(self, key: str = jwt_codec.DEFAULT_KEY):
+    def __init__(self, key: str = jwt_codec.DEFAULT_KEY) -> None:
         self._key = key
 
-    async def start(self):
+    async def start(self) -> None:
         if self._key == jwt_codec.DEFAULT_KEY:
             _logger.warning("jwt.token.key is not configured: using the default development key")
 
-    async def stop(self):
+    async def stop(self) -> None:
         pass
 
-    async def authenticate(self, headers: dict) -> Optional[dict]:
+    async def authenticate(self, headers: dict) -> dict | None:
         token = _token_from_headers(headers)
         if token is None:
             return None
         return jwt_codec.decode(token, self._key)
 
 
-def _token_from_headers(headers: dict) -> Optional[str]:
+def _token_from_headers(headers: dict) -> str | None:
     """the token of an Authorization header or of the _ycappuccino cookie, or None"""
     authorization = headers.get("authorization")
     if authorization is not None and authorization.startswith(_BEARER):

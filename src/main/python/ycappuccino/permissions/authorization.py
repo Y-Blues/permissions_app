@@ -10,13 +10,13 @@ from ycappuccino.api.storage import IManager
 
 class RolePermissionAuthorization(IAuthorization):
 
-    def __init__(self, manager: IManager):
+    def __init__(self, manager: IManager) -> None:
         self._manager = manager
 
-    async def start(self):
+    async def start(self) -> None:
         pass
 
-    async def stop(self):
+    async def stop(self) -> None:
         pass
 
     async def is_authorized(self, subject: dict, action: str, item_id: str) -> bool:

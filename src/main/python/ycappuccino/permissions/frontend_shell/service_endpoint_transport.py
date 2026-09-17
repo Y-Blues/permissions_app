@@ -1,13 +1,13 @@
 """Transport calling a local IServiceEndpoint directly (no HTTP) -- see main.py's docstring."""
 
-from typing import Any, Optional
+from typing import Any
 
 from ycappuccino.api.endpoints_service import IServiceEndpoint
 
 
 class ServiceEndpointTransport:
 
-    def __init__(self, endpoint: IServiceEndpoint, subject: Optional[dict] = None):
+    def __init__(self, endpoint: IServiceEndpoint, subject: dict | None = None) -> None:
         self._endpoint = endpoint
         self.subject = subject
 
