@@ -1,13 +1,13 @@
-title: Nouvelle organisation
+title: New organization
 fields:
   - name: name
-    label: Nom
+    label: Name
     required: true
   - name: father
-    label: Organisation parente (optionnel)
+    label: Parent organization (optional)
 actions:
   - name: submit
-    label: Créer
+    label: Create
     endpoint:
       service: organization
       method: POST

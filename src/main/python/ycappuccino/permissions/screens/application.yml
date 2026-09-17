@@ -1,33 +1,33 @@
 # the layout of the admin console, rendered the same way in a terminal (FrontendShell) and in a browser
 # (PermissionsWebApp): a navigation bar with one dropdown per section, the signed-in user and sign-out, above
 # the screens. Transports: login = ILoginService, services = IServiceEndpoint, crud = ICrud.
-title: Administration des permissions
+title: Permissions administration
 login: {screen: login, transport: login, user: login}
 menu:
-  - label: Mon compte
+  - label: My account
     entries:
-      - label: Changer mon mot de passe
+      - label: Change my password
         steps:
           - {screen: change_password, transport: services}
-  - label: Organisations
+  - label: Organizations
     entries:
-      - label: Créer une organisation
+      - label: Create an organization
         steps:
           - {screen: organization, transport: crud}
-  - label: Rôles et permissions
+  - label: Roles and permissions
     entries:
-      - label: Créer un rôle
+      - label: Create a role
         steps:
           - {screen: role, transport: crud}
-      - label: Créer une permission
+      - label: Create a permission
         steps:
           - {screen: role_permission, transport: crud}
-      - label: Attribuer un rôle
+      - label: Assign a role
         steps:
           - {screen: role_account, transport: crud}
-  - label: Utilisateurs
+  - label: Users
     entries:
-      - label: Créer un utilisateur
+      - label: Create a user
         # the three records AccountBootStrap creates for the superadmin: credentials (hashed password, never
         # a raw CRUD write), profile, then the role in a tenant
         steps:

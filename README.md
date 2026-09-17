@@ -123,8 +123,8 @@ class TestAuthorization(unittest.IsolatedAsyncioTestCase):
 Le layout de la console d'admin est décrit une seule fois,
 `src/main/python/ycappuccino/permissions/screens/application.yml` (voir « Une console entière » dans le
 README de [ui](../ui/README.md)) : écran de connexion, puis une barre avec un menu déroulant par section
-(« Mon compte », « Organisations », « Rôles et permissions », « Utilisateurs »), l'utilisateur connecté et
-« Se déconnecter », au-dessus des écrans enchaînés et pré-remplis et du message « Enregistré. ». Les écrans sont les templates YAML du même dossier.
+(« My account », « Organizations », « Roles and permissions », « Users »), l'utilisateur connecté et
+« Sign out », au-dessus des écrans enchaînés et pré-remplis et du message « Saved. ». Les écrans sont les templates YAML du même dossier.
 La console terminal le rend avec `ShellApplication` (`ui_shell`), la console web avec `WebApplication`
 (`ui_web`) : modifier ce fichier change les deux.
 

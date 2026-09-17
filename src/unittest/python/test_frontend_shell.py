@@ -88,10 +88,10 @@ class TestFrontendShell(unittest.IsolatedAsyncioTestCase):
 
             self.assertEqual(
                 [select.prompt for select in self.app.query(Select)],
-                ["Mon compte", "Organisations", "Rôles et permissions", "Utilisateurs"],
+                ["My account", "Organizations", "Roles and permissions", "Users"],
             )
             self.assertEqual(str(self.app.query_one("#user", Label).content), "superadmin")
-            self.assertEqual(str(self.app.query_one("#message", Label).content), "Bienvenue superadmin.")
+            self.assertEqual(str(self.app.query_one("#message", Label).content), "Welcome, superadmin.")
 
     async def test_wrong_credentials_stay_on_the_login_screen(self):
         async with self.app.run_test() as pilot:
@@ -103,19 +103,19 @@ class TestFrontendShell(unittest.IsolatedAsyncioTestCase):
     async def test_a_crud_entry_creates_with_the_subject_of_the_token(self):
         async with self.app.run_test() as pilot:
             await self._sign_in(pilot)
-            await self._choose(pilot, "Créer une organisation")
+            await self._choose(pilot, "Create an organization")
             await self._submit(pilot, name="Acme")
 
             self.assertEqual(len(self.crud.calls), 1)
             item_id, fields, subject = self.crud.calls[0]
             self.assertEqual((item_id, fields["name"]), ("organization", "Acme"))
             self.assertEqual({key: subject[key] for key in ("sub", "tid")}, self._subject())
-            self.assertEqual(str(self.app.query_one("#message", Label).content), "Enregistré.")
+            self.assertEqual(str(self.app.query_one("#message", Label).content), "Saved.")
 
     async def test_changing_the_password_calls_the_exposed_service(self):
         async with self.app.run_test() as pilot:
             await self._sign_in(pilot)
-            await self._choose(pilot, "Changer mon mot de passe")
+            await self._choose(pilot, "Change my password")
             await self._submit(pilot, login="superadmin", password="demo", new_password="new")
 
             name, body, subject = self.endpoint.calls[0]
@@ -125,7 +125,7 @@ class TestFrontendShell(unittest.IsolatedAsyncioTestCase):
     async def test_creating_a_user_prefills_the_login_then_the_account_id(self):
         async with self.app.run_test() as pilot:
             await self._sign_in(pilot)
-            await self._choose(pilot, "Créer un utilisateur")
+            await self._choose(pilot, "Create a user")
             await self._submit(pilot, login="bob", password="secret")
 
             self.assertEqual(self.app.query_one("#field-login").value, "bob")

@@ -1,15 +1,15 @@
-title: Nouvel utilisateur — identifiants
+title: New user — credentials
 fields:
   - name: login
-    label: Identifiant
+    label: Login
     required: true
   - name: password
-    label: Mot de passe initial
+    label: Initial password
     type: password
     required: true
 actions:
   - name: submit
-    label: Créer les identifiants
+    label: Create the credentials
     endpoint:
       service: create_login
       method: POST

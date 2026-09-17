@@ -23,7 +23,7 @@ class TestScreensLoad(unittest.TestCase):
     def test_login_screen_shape(self):
         screen = load_login_screen()
 
-        self.assertEqual(screen.title, "Connexion")
+        self.assertEqual(screen.title, "Sign in")
         self.assertEqual({a_field.name for a_field in screen.fields}, {"login", "password"})
         self.assertEqual((screen.actions[0].endpoint.service, screen.actions[0].endpoint.method), ("login", "login"))
 
@@ -84,10 +84,10 @@ class TestApplication(unittest.TestCase):
         self.assertEqual(
             [(group.label, [entry.label for entry in group.entries]) for group in application.menu],
             [
-                ("Mon compte", ["Changer mon mot de passe"]),
-                ("Organisations", ["Créer une organisation"]),
-                ("Rôles et permissions", ["Créer un rôle", "Créer une permission", "Attribuer un rôle"]),
-                ("Utilisateurs", ["Créer un utilisateur"]),
+                ("My account", ["Change my password"]),
+                ("Organizations", ["Create an organization"]),
+                ("Roles and permissions", ["Create a role", "Create a permission", "Assign a role"]),
+                ("Users", ["Create a user"]),
             ],
         )
         self.assertEqual(application.user_field, "login")
@@ -103,7 +103,7 @@ class TestApplication(unittest.TestCase):
 
     def test_creating_a_user_prefills_the_login_then_the_account_id(self):
         entry = next(
-            entry for group in load_application().menu for entry in group.entries if entry.label == "Créer un utilisateur"
+            entry for group in load_application().menu for entry in group.entries if entry.label == "Create a user"
         )
 
         self.assertEqual(

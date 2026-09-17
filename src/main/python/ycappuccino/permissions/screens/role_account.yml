@@ -1,17 +1,17 @@
-title: Attribuer un rôle
+title: Assign a role
 fields:
   - name: account
-    label: Utilisateur (identifiant du compte)
+    label: User (account identifier)
     required: true
   - name: role
-    label: Rôle (identifiant)
+    label: Role (identifier)
     required: true
   - name: organization
-    label: "Tenant (organisation ; \"system\" pour un rôle global, ex. admin)"
+    label: "Tenant (organization; \"system\" for a global role, e.g. admin)"
     required: true
 actions:
   - name: submit
-    label: Attribuer
+    label: Assign
     endpoint:
       service: roleAccount
       method: POST

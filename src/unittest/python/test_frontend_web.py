@@ -103,10 +103,10 @@ class TestPermissionsWebApp(unittest.IsolatedAsyncioTestCase):
         await self.page.dom.click(find_button(self.page.mount, label))
 
     async def _sign_in(self):
-        await self._submit({"login": "superadmin", "password": "demo"}, "Se connecter")
+        await self._submit({"login": "superadmin", "password": "demo"}, "Sign in")
 
     def test_it_starts_on_the_login_screen(self):
-        self.assertIn("Connexion", texts(self.page.mount))
+        self.assertIn("Sign in", texts(self.page.mount))
 
     async def test_signing_in_keeps_the_token_and_shows_the_sections_and_the_user(self):
         await self._sign_in()
@@ -115,33 +115,33 @@ class TestPermissionsWebApp(unittest.IsolatedAsyncioTestCase):
         (nav,) = _by_class(self.page.mount, "yc-nav")
         self.assertEqual(
             [texts(menu)[0] for menu in _by_class(nav, "yc-menu")],
-            ["Mon compte", "Organisations", "Rôles et permissions", "Utilisateurs"],
+            ["My account", "Organizations", "Roles and permissions", "Users"],
         )
         self.assertEqual(texts(_by_class(nav, "yc-user")[0]), ["superadmin"])
-        self.assertIn("Bienvenue superadmin.", texts(self.page.mount))
+        self.assertIn("Welcome, superadmin.", texts(self.page.mount))
 
     async def test_wrong_credentials_stay_on_the_login_screen_with_the_message(self):
-        await self._submit({"login": "superadmin", "password": "wrong"}, "Se connecter")
+        await self._submit({"login": "superadmin", "password": "wrong"}, "Sign in")
 
         self.assertIsNone(self.session.token)
         self.assertIn("wrong login or password", texts(self.page.mount))
-        self.assertIsNotNone(find_button(self.page.mount, "Se connecter"))
+        self.assertIsNotNone(find_button(self.page.mount, "Sign in"))
 
     async def test_a_crud_screen_creates_then_confirms_under_the_bar(self):
         await self._sign_in()
-        await self._choose("Créer une organisation")
+        await self._choose("Create an organization")
 
-        await self._submit({"name": "Acme"}, "Créer")
+        await self._submit({"name": "Acme"}, "Create")
 
         self.assertEqual(self.crud.calls, [("organization", {"name": "Acme", "father": ""})])
-        self.assertIn("Enregistré.", texts(self.page.mount))
-        self.assertIsNotNone(find_button(self.page.mount, "Créer une organisation"))
+        self.assertIn("Saved.", texts(self.page.mount))
+        self.assertIsNotNone(find_button(self.page.mount, "Create an organization"))
 
     async def test_changing_the_password_calls_the_exposed_service(self):
         await self._sign_in()
-        await self._choose("Changer mon mot de passe")
+        await self._choose("Change my password")
 
-        await self._submit({"login": "superadmin", "password": "demo", "new_password": "new"}, "Valider")
+        await self._submit({"login": "superadmin", "password": "demo", "new_password": "new"}, "Change password")
 
         self.assertEqual(
             self.endpoint.calls,
@@ -150,13 +150,13 @@ class TestPermissionsWebApp(unittest.IsolatedAsyncioTestCase):
 
     async def test_creating_a_user_chains_credentials_profile_and_tenant_grant(self):
         await self._sign_in()
-        await self._choose("Créer un utilisateur")
+        await self._choose("Create a user")
 
-        await self._submit({"login": "bob", "password": "secret"}, "Créer les identifiants")
+        await self._submit({"login": "bob", "password": "secret"}, "Create the credentials")
         self.assertEqual(find_field(self.page.mount, "login").value, "bob")
-        await self._submit({"name": "Bob", "role": "editor"}, "Créer le compte")
+        await self._submit({"name": "Bob", "role": "editor"}, "Create the account")
         self.assertEqual(find_field(self.page.mount, "account").value, "created")
-        await self._submit({"role": "editor", "organization": "acme"}, "Attribuer")
+        await self._submit({"role": "editor", "organization": "acme"}, "Assign")
 
         self.assertEqual(self.endpoint.calls, [("create_login", "POST", {"login": "bob", "password": "secret"})])
         self.assertEqual(
@@ -166,15 +166,15 @@ class TestPermissionsWebApp(unittest.IsolatedAsyncioTestCase):
                 ("roleAccount", {"account": "created", "role": "editor", "organization": "acme"}),
             ],
         )
-        self.assertIn("Enregistré.", texts(self.page.mount))
+        self.assertIn("Saved.", texts(self.page.mount))
 
     async def test_signing_out_forgets_the_token_and_shows_the_login_screen(self):
         await self._sign_in()
 
-        await self._choose("Se déconnecter")
+        await self._choose("Sign out")
 
         self.assertIsNone(self.session.token)
-        self.assertIsNotNone(find_button(self.page.mount, "Se connecter"))
+        self.assertIsNotNone(find_button(self.page.mount, "Sign in"))
 
 
 if __name__ == "__main__":

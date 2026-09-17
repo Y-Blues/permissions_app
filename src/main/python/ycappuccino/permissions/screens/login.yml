@@ -1,15 +1,15 @@
-title: Connexion
+title: Sign in
 fields:
   - name: login
-    label: Identifiant
+    label: Login
     required: true
   - name: password
-    label: Mot de passe
+    label: Password
     type: password
     required: true
 actions:
   - name: submit
-    label: Se connecter
+    label: Sign in
     endpoint:
       service: login
       method: login
