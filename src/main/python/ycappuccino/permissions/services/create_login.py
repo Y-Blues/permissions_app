@@ -22,12 +22,13 @@ class CreateLoginService(IExposedService):
         pass
 
     @rpc_method(method="POST", summary="create a new login with a hashed password")
-    async def create_login(self, login: str, password: str) -> dict:
+    async def create_login(self, login: str, password: str, subject: dict | None = None) -> dict:
+        """the login belongs to the organization of whoever creates it (subject); unique across all of them"""
         if await self._manager.get_one("login", login, subject=None) is not None:
             raise InvalidRequest(f"login {login!r} already exists")
         created = Login()
         created.id(login)
         created.login(login)
         created.password(password)
-        await self._manager.up_sert_model(created, subject=None)
+        await self._manager.up_sert_model(created, subject=subject)
         return {}

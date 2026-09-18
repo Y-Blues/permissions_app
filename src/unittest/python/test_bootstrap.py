@@ -7,6 +7,7 @@ from permissions_fixtures import create_manager
 from ycappuccino.permissions import passwords
 from ycappuccino.permissions.authorization import RolePermissionAuthorization
 from ycappuccino.permissions.bootstrap import AccountBootStrap
+from ycappuccino.permissions.organization_tree import OrganizationTree
 
 
 class FakeConfiguration:
@@ -77,6 +78,25 @@ class TestAccountBootStrap(unittest.IsolatedAsyncioTestCase):
             await passwords.check_login(self.manager, "superadmin", generated_password),
             "superadmin",
         )
+
+    async def test_the_system_records_belong_to_the_system_organization_so_its_admin_lists_them(self):
+        tree = OrganizationTree(self.manager)
+        manager, directory = create_manager(filters=[tree])
+        self.addCleanup(shutil.rmtree, directory, True)
+        await AccountBootStrap(manager, FakeConfiguration(
+            {"permissions.superadmin.login": "admin", "permissions.superadmin.password": "admin"}
+        ), self.logger).start()
+        tree._manager = manager
+        await tree.start()
+        admin = {"sub": "admin", "tid": "system"}
+
+        for item_id, expected in (
+            ("organization", ["system"]), ("role", ["superadmin"]), ("account", ["admin"]),
+            ("roleAccount", ["admin"]), ("rolePermission", ["superadmin"]),
+        ):
+            with self.subTest(item=item_id):
+                listed = await manager.get_many(item_id, {}, subject=admin)
+                self.assertEqual([model.get_storage_model()["_id"] for model in listed], expected)
 
     async def test_is_idempotent(self):
         bootstrap = self._bootstrap({"permissions.superadmin.password": "demo"})

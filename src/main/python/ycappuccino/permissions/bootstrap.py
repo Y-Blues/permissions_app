@@ -39,6 +39,9 @@ class AccountBootStrap(YCappuccinoComponent):
         if await self._manager.get_one("login", name, subject=None) is not None:
             return  # already initialized
 
+        # written as the superadmin, in the system organization: like any user's records, they carry their
+        # organization (_tid), so the tenant filter shows them to the system organization's members
+        owner = {"sub": name, "tid": SYSTEM}
         password = self._config.get("permissions.superadmin.password", None)
         if password is None:
             password = secrets.token_urlsafe(16)
@@ -47,35 +50,35 @@ class AccountBootStrap(YCappuccinoComponent):
         organization = Organization()
         organization.id(SYSTEM)
         organization.name(SYSTEM)
-        await self._manager.up_sert_model(organization, subject=None)
+        await self._manager.up_sert_model(organization, subject=owner)
 
         role = Role()
         role.id(SUPERADMIN)
         role.name(SUPERADMIN)
-        await self._manager.up_sert_model(role, subject=None)
+        await self._manager.up_sert_model(role, subject=owner)
 
         login = Login()
         login.id(name)
         login.login(name)
         login.password(password)
-        await self._manager.up_sert_model(login, subject=None)
+        await self._manager.up_sert_model(login, subject=owner)
 
         account = Account()
         account.id(name)
         account.name(name)
         account.login(name)
         account.role(SUPERADMIN)
-        await self._manager.up_sert_model(account, subject=None)
+        await self._manager.up_sert_model(account, subject=owner)
 
         role_account = RoleAccount()
         role_account.id(name)
         role_account.role(SUPERADMIN)
         role_account.account(name)
         role_account.organization(SYSTEM)
-        await self._manager.up_sert_model(role_account, subject=None)
+        await self._manager.up_sert_model(role_account, subject=owner)
 
         role_permission = RolePermission()
         role_permission.id(SUPERADMIN)
         role_permission.role(SUPERADMIN)
         role_permission.rights(["*:*"])
-        await self._manager.up_sert_model(role_permission, subject=None)
+        await self._manager.up_sert_model(role_permission, subject=owner)

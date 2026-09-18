@@ -154,6 +154,12 @@ class TestFourProcessesExample(unittest.TestCase):
         self.assertEqual([role["name"] for role in roles.body["result"]], ["four-processes-editor"])
         self.assertEqual(logins.body["result"]["login"], "four-processes-bob")
 
+    def test_the_admin_lists_the_system_records_created_at_bootstrap(self):
+        status, _, payload = _dispatch(CRUD, "get_many", {"item_id": "role"}, self.token)
+
+        self.assertEqual(status, 200)
+        self.assertIn("superadmin", [role["_id"] for role in payload["data"]["result"]["items"]])
+
     def test_an_anonymous_call_is_refused(self):
         status, _, _ = _dispatch(CRUD, "get_many", {"item_id": "role"})
 

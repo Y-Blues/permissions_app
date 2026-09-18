@@ -6,6 +6,7 @@ from permissions_fixtures import create_manager
 from ycappuccino.api.decorators import get_rpc_methods
 from ycappuccino.api.endpoints_storage import InvalidRequest, NotFound
 from ycappuccino.endpoints_service.endpoint import ServiceEndpoint
+from ycappuccino.permissions.organization_tree import OrganizationTree
 from ycappuccino.permissions.services.create_login import CreateLoginService
 
 
@@ -26,6 +27,18 @@ class TestCreateLoginService(unittest.IsolatedAsyncioTestCase):
         # only ever set by Login.password(cleartext) -- proof the hashed path ran, not a raw write
         self.assertNotIn("password", stored)
         self.assertTrue(stored["salt"])
+
+    async def test_the_login_belongs_to_the_organization_of_whoever_creates_it(self):
+        manager, directory = create_manager(filters=[OrganizationTree(self.manager)])
+        self.addCleanup(shutil.rmtree, directory, True)
+
+        await CreateLoginService(manager).create_login("bob", "secret", subject={"sub": "admin", "tid": "acme"})
+
+        def ids(models):
+            return [model.get_storage_model()["_id"] for model in models]
+
+        self.assertEqual(ids(await manager.get_many("login", {}, subject={"sub": "alice", "tid": "acme"})), ["bob"])
+        self.assertEqual(ids(await manager.get_many("login", {}, subject={"sub": "eve", "tid": "globex"})), [])
 
     async def test_rejects_an_already_existing_login(self):
         service = CreateLoginService(self.manager)

@@ -74,7 +74,10 @@ Le jeton est présenté soit en en-tête `Authorization: Bearer <jeton>`, soit d
 
 ## Bootstrap
 
-Au premier démarrage, `AccountBootStrap` crée l'organisation `system`, le rôle `superadmin` (`rights: ["*:*"]`) et le compte `superadmin`. Idempotent : les démarrages suivants ne recréent rien.
+Au premier démarrage, `AccountBootStrap` crée l'organisation `system`, le rôle `superadmin` (`rights: ["*:*"]`) et le compte `superadmin`. Idempotent : les démarrages suivants ne recréent rien. Ces enregistrements sont écrits par le superadmin dans l'organisation `system` : ils portent leur
+organisation (`_tid`) comme ceux de n'importe quel utilisateur, et le filtre multi-tenant les montre donc aux
+membres de `system`. De même, un login créé par `create_login` appartient à l'organisation de celui qui le
+crée.
 
 ## Tester avec permissions_app
 
