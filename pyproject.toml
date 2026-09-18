@@ -17,10 +17,11 @@ dependencies = [
 ]
 
 [dependency-groups]
-# the storage and backend processes of example/three_processes, started by its end-to-end test
+# the processes of example/three_processes and example/four_processes, started by their end-to-end tests
 dev = [
     "ycappuccino-http-server",
     "ycappuccino-remote",
+    "ycappuccino-hosts",
 ]
 
 [build-system]
@@ -43,3 +44,4 @@ ycappuccino-ui-web = { path = "../ui_web", editable = true }
 ycappuccino-client = { path = "../client", editable = true }
 ycappuccino-http-server = { path = "../http_server", editable = true }
 ycappuccino-remote = { path = "../remote", editable = true }
+ycappuccino-hosts = { path = "../hosts", editable = true }

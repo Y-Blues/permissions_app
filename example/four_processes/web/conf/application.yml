@@ -1,0 +1,19 @@
+---
+# process 4 -- web front: serves site/ (the generic client page, ycappuccino.json, the theme and the wheels) with
+# hosts. The page runs a client Framework in the browser, whose proxies call the HTTP adapter (client.base_url in
+# ycappuccino.json). Its memory storage only holds the Host document of site/.
+name: web
+bundle_prefix:
+  - ycappuccino.storage
+  - webhost
+  - ycappuccino.hosts
+layers:
+  ycappuccino_storage_memory:
+    active: true
+config:
+  http_server:
+    active: true
+    port: 8304
+    ip: localhost
+  shell:
+    console: false

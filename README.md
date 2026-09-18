@@ -207,6 +207,33 @@ Login `admin` / `admin`. Quitter la console arrête les deux autres ; leurs jour
 fichiers de configuration, pilote la vraie console (connexion, création d'un rôle) et relit le rôle
 directement dans l'`IStorage` du processus de stockage.
 
+## Quatre processus : stockage, use cases, adaptateur HTTP, front web
+
+`example/four_processes/run.sh` découpe le backend par rôle, chaque processus n'embarquant que ses
+composants, et sert la console web. Ouvrir http://localhost:8304, login `admin` / `admin` ; `Ctrl+C` arrête
+les quatre, leurs journaux sont dans `example/four_processes/logs/`.
+
+| Processus | Contient | Prend en proxy |
+|---|---|---|
+| `storage` (8301) | `MemoryStorage` | — |
+| `usecases` (8302) | `Manager`, use cases CRUD et services, permissions (connexion, autorisation, bootstrap) | `IStorage` ← storage |
+| `http` (8303) | l'API publique : `ApiServlet`, `JwtAuthentication`, `__remote_dispatch__`/`__remote_capabilities__` pour le navigateur, `FederatedServiceEndpoint` | `ICrud`, `IDrafts`, `IItemCatalog`, `ILoginService` ← usecases |
+| `web` (8304) | le front web : la page générique de `client`, `ycappuccino.json`, le thème, les wheels (`hosts`) | — |
+
+- **Le navigateur** charge la page depuis `web` et appelle l'API de `http` (`client.base_url` dans
+  `ycappuccino.json`). Deux origines : `http` autorise celle de `web` et elle seule (`ApiServlet`
+  `allowed_origins`, CORS).
+- **L'adaptateur HTTP ne contient aucun use case** : il authentifie le jeton de l'utilisateur, puis relaie
+  chaque appel, signé et pour le compte de cet utilisateur, au processus `usecases` ; un service nommé
+  (`change_password`, `create_login`...) est relayé par `FederatedServiceEndpoint`.
+- **Chaque processus appelé a son petit serveur HTTP** : `remote` voyage en HTTP (`__remote_dispatch__`).
+  Seul `http` est l'API de l'application ; `storage` et `usecases` n'acceptent que les appels signés de
+  leurs pairs déclarés (`ConfiguredPeers`).
+
+`test_four_processes_example.py` lance les quatre processus depuis ces mêmes fichiers de configuration,
+joue le navigateur contre `http` (découverte, pré-vol CORS, connexion, création d'un rôle et d'un login,
+refus d'un appel anonyme) et relit le rôle et le login dans l'`IStorage` du processus `storage`.
+
 **Modèle de tenancy** (voir « Multi-tenant » plus haut) : `Role`/`RolePermission` ne sont **pas** eux-mêmes
 liés à un tenant — leur définition est la même partout. C'est `RoleAccount` (écran « Attribuer un rôle »,
 `FrontendShell.grant_role()`) qui scope réellement une attribution à une organisation. Un rôle « global »

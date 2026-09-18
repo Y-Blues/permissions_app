@@ -369,6 +369,23 @@ requires-dist = [
 ]
 
 [[package]]
+name = "ycappuccino-hosts"
+version = "0.1.0"
+source = { editable = "../hosts" }
+dependencies = [
+    { name = "ycappuccino-api" },
+    { name = "ycappuccino-core" },
+    { name = "ycappuccino-storage" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "ycappuccino-api", editable = "../api" },
+    { name = "ycappuccino-core", editable = "../core" },
+    { name = "ycappuccino-storage", editable = "../storage" },
+]
+
+[[package]]
 name = "ycappuccino-http-server"
 version = "0.1.0"
 source = { editable = "../http_server" }
@@ -408,6 +425,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "ycappuccino-hosts" },
     { name = "ycappuccino-http-server" },
     { name = "ycappuccino-remote" },
 ]
@@ -428,6 +446,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "ycappuccino-hosts", editable = "../hosts" },
     { name = "ycappuccino-http-server", editable = "../http_server" },
     { name = "ycappuccino-remote", editable = "../remote" },
 ]

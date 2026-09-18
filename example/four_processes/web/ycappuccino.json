@@ -1,0 +1,24 @@
+{
+ "name": "permissions-admin",
+ "wheels": [
+  "wheels/ycappuccino_api-0.1.0-py3-none-any.whl",
+  "wheels/ycappuccino_core-0.1.0-py3-none-any.whl",
+  "wheels/ycappuccino_client-0.1.0-py3-none-any.whl",
+  "wheels/ycappuccino_ui-0.1.0-py3-none-any.whl",
+  "wheels/ycappuccino_ui_web-0.1.0-py3-none-any.whl",
+  "wheels/ycappuccino_permissions-0.1.0-py3-none-any.whl"
+ ],
+ "bundles": [
+  "ycappuccino.ui_web.page",
+  "ycappuccino.permissions.frontend_web"
+ ],
+ "components": {
+  "PyodidePage": {
+   "mount_selector": "#app",
+   "stylesheets": "style.css"
+  }
+ },
+ "properties": {
+  "client.base_url": "http://localhost:8303/api"
+ }
+}

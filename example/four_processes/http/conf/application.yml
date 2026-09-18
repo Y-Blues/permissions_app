@@ -1,0 +1,35 @@
+---
+# process 3 -- HTTP adapter: the application's public API. It authenticates the user's token (JwtAuthentication,
+# same key as the use cases), serves the browser's JSON-RPC calls (__remote_dispatch__, __remote_capabilities__)
+# and holds no use case: ICrud, IDrafts, IItemCatalog and ILoginService are proxies to the use cases process, and
+# its IServiceEndpoint (FederatedServiceEndpoint) forwards every named service there. Its CORS allows the web
+# front's origin only.
+name: http
+bundle_prefix:
+  - ycappuccino.http_server
+  - ycappuccino.permissions.authentication
+  - ycappuccino.remote.dispatch
+  - ycappuccino.remote.capabilities
+  - ycappuccino.remote.configured_peers
+  - ycappuccino.remote.peer_authentication
+  - ycappuccino.remote.component_directory
+  - ycappuccino.remote.discovery
+  - ycappuccino.remote.federated_endpoint
+components:
+  ApiServlet:
+    allowed_origins: "http://localhost:8304"
+  JwtAuthentication:
+    key: demo-secret-key-not-for-production-use
+  ConfiguredPeers:
+    peers: "usecases=http://localhost:8302"
+    secret: "change-me-secret-shared-by-the-four-processes"
+  ComponentDirectory:
+    specifications: "ycappuccino.api.endpoints_storage.ICrud, ycappuccino.api.endpoints_storage.IDrafts, ycappuccino.api.endpoints_storage.IItemCatalog, ycappuccino.api.permissions.ILoginService"
+    refresh: 2.0
+config:
+  http_server:
+    active: true
+    port: 8303
+    ip: localhost
+  shell:
+    console: false
